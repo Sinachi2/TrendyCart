@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import { Input } from "@/components/ui/input";
@@ -11,80 +11,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const allProducts = [
-  {
-    id: 1,
-    name: "Premium Wireless Headphones",
-    price: 299,
-    originalPrice: 399,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
-    category: "Electronics",
-    isNew: true,
-  },
-  {
-    id: 2,
-    name: "Smart Watch Pro",
-    price: 449,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
-    category: "Wearables",
-    isNew: true,
-  },
-  {
-    id: 3,
-    name: "Designer Backpack",
-    price: 129,
-    originalPrice: 179,
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500",
-    category: "Fashion",
-  },
-  {
-    id: 4,
-    name: "Minimalist Wallet",
-    price: 49,
-    image: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500",
-    category: "Accessories",
-  },
-  {
-    id: 5,
-    name: "Bluetooth Speaker",
-    price: 89,
-    image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=500",
-    category: "Electronics",
-  },
-  {
-    id: 6,
-    name: "Running Shoes",
-    price: 159,
-    originalPrice: 199,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500",
-    category: "Fashion",
-  },
-  {
-    id: 7,
-    name: "Laptop Sleeve",
-    price: 39,
-    image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=500",
-    category: "Accessories",
-  },
-  {
-    id: 8,
-    name: "Fitness Tracker",
-    price: 199,
-    image: "https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=500",
-    category: "Wearables",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
 
 const Shop = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredProducts = allProducts.filter((product) => {
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error loading products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,11 +79,11 @@ const Shop = () => {
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="Electronics">Electronics</SelectItem>
-              <SelectItem value="Fashion">Fashion</SelectItem>
-              <SelectItem value="Wearables">Wearables</SelectItem>
-              <SelectItem value="Accessories">Accessories</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category} value={category}>
+                  {category === "all" ? "All Categories" : category}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
@@ -132,18 +94,35 @@ const Shop = () => {
         </div>
 
         {/* Products Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
+        {loading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">
-              No products found. Try adjusting your filters.
-            </p>
+            <p className="text-muted-foreground">Loading products...</p>
           </div>
+        ) : (
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  price={product.price}
+                  originalPrice={product.original_price}
+                  image={product.image_url}
+                  category={product.category}
+                  isNew={product.is_new}
+                />
+              ))}
+            </div>
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg">
+                  No products found. Try adjusting your filters.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
