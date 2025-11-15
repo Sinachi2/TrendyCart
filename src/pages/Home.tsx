@@ -4,43 +4,30 @@ import { Button } from "@/components/ui/button";
 import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
 import heroBg from "@/assets/hero-bg.jpg";
-
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Premium Wireless Headphones",
-    price: 299,
-    originalPrice: 399,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500",
-    category: "Electronics",
-    isNew: true,
-  },
-  {
-    id: 2,
-    name: "Smart Watch Pro",
-    price: 449,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
-    category: "Wearables",
-    isNew: true,
-  },
-  {
-    id: 3,
-    name: "Designer Backpack",
-    price: 129,
-    originalPrice: 179,
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500",
-    category: "Fashion",
-  },
-  {
-    id: 4,
-    name: "Minimalist Wallet",
-    price: 49,
-    image: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=500",
-    category: "Accessories",
-  },
-];
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadFeaturedProducts();
+  }, []);
+
+  const loadFeaturedProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .limit(4)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setFeaturedProducts(data || []);
+    } catch (error) {
+      console.error("Error loading featured products:", error);
+    }
+  };
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -126,7 +113,16 @@ const Home = () => {
           
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {featuredProducts.map((product) => (
-              <ProductCard key={product.id} {...product} />
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                name={product.name}
+                price={product.price}
+                originalPrice={product.original_price}
+                image={product.image_url}
+                category={product.category}
+                isNew={product.is_new}
+              />
             ))}
           </div>
 

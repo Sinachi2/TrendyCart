@@ -2,9 +2,13 @@ import { ShoppingCart, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface ProductCardProps {
-  id: number;
+  id: string;
   name: string;
   price: number;
   originalPrice?: number;
@@ -13,7 +17,51 @@ interface ProductCardProps {
   isNew?: boolean;
 }
 
-const ProductCard = ({ name, price, originalPrice, image, category, isNew }: ProductCardProps) => {
+const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }: ProductCardProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to add items to cart",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("cart_items")
+        .upsert({
+          user_id: user.id,
+          product_id: id,
+          quantity: 1,
+        }, {
+          onConflict: "user_id,product_id",
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Added to cart",
+        description: `${name} has been added to your cart`,
+      });
+
+      // Trigger a cart count refresh
+      window.dispatchEvent(new Event("cartUpdated"));
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300">
       <div className="relative overflow-hidden bg-muted">
@@ -50,7 +98,7 @@ const ProductCard = ({ name, price, originalPrice, image, category, isNew }: Pro
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+        <Button onClick={handleAddToCart} className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
           <ShoppingCart className="h-4 w-4 mr-2" />
           Add to Cart
         </Button>

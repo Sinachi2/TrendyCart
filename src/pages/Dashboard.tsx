@@ -1,34 +1,111 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, DollarSign, Users, Package } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
-  const stats = [
+  const navigate = useNavigate();
+  const { user, loading, isAdmin } = useAuth();
+  const [stats, setStats] = useState({
+    totalRevenue: 0,
+    ordersCount: 0,
+    customersCount: 0,
+    productsCount: 0,
+  });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    } else if (!loading && user && !isAdmin) {
+      navigate("/");
+    } else if (user && isAdmin) {
+      loadDashboardData();
+    }
+  }, [user, loading, isAdmin, navigate]);
+
+  const loadDashboardData = async () => {
+    try {
+      // Load stats
+      const [ordersRes, customersRes, productsRes] = await Promise.all([
+        supabase.from("orders").select("total_amount"),
+        supabase.from("profiles").select("id"),
+        supabase.from("products").select("id"),
+      ]);
+
+      const totalRevenue = ordersRes.data?.reduce((sum, order) => sum + parseFloat(String(order.total_amount || 0)), 0) || 0;
+
+      setStats({
+        totalRevenue,
+        ordersCount: ordersRes.data?.length || 0,
+        customersCount: customersRes.data?.length || 0,
+        productsCount: productsRes.data?.length || 0,
+      });
+
+      // Load recent orders
+      const { data: orders } = await supabase
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      setRecentOrders(orders || []);
+
+      // Load top products
+      const { data: products } = await supabase
+        .from("products")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(4);
+
+      setTopProducts(products || []);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return null;
+  }
+
+  const statsData = [
     {
       title: "Total Revenue",
-      value: "$45,231",
+      value: `$${stats.totalRevenue.toFixed(2)}`,
       change: "+20.1%",
       icon: DollarSign,
       color: "text-green-600",
     },
     {
       title: "Orders",
-      value: "1,234",
+      value: stats.ordersCount.toString(),
       change: "+12.5%",
       icon: ShoppingCart,
       color: "text-blue-600",
     },
     {
       title: "Customers",
-      value: "892",
+      value: stats.customersCount.toString(),
       change: "+8.2%",
       icon: Users,
       color: "text-purple-600",
     },
     {
       title: "Products",
-      value: "156",
+      value: stats.productsCount.toString(),
       change: "+3.1%",
       icon: Package,
       color: "text-orange-600",
@@ -49,7 +126,7 @@ const Dashboard = () => {
           <main className="flex-1 p-6">
             {/* Stats Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-              {stats.map((stat) => (
+              {statsData.map((stat) => (
                 <Card key={stat.title} className="hover:shadow-card transition-shadow">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -75,18 +152,23 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="flex items-center justify-between pb-4 border-b border-border last:border-0 last:pb-0">
+                    {recentOrders.map((order) => (
+                      <div key={order.id} className="flex items-center justify-between pb-4 border-b border-border last:border-0 last:pb-0">
                         <div>
-                          <p className="font-medium">Order #ORD-{1000 + i}</p>
-                          <p className="text-sm text-muted-foreground">2 items</p>
+                          <p className="font-medium">Order #{order.id.slice(0, 8)}</p>
+                          <p className="text-sm text-muted-foreground">{order.status}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${(Math.random() * 200 + 50).toFixed(2)}</p>
-                          <p className="text-sm text-muted-foreground">Pending</p>
+                          <p className="font-medium">${parseFloat(order.total_amount).toFixed(2)}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
                     ))}
+                    {recentOrders.length === 0 && (
+                      <p className="text-muted-foreground text-center py-4">No orders yet</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -97,25 +179,23 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {[
-                      "Premium Wireless Headphones",
-                      "Smart Watch Pro",
-                      "Designer Backpack",
-                      "Bluetooth Speaker",
-                    ].map((product, i) => (
-                      <div key={i} className="flex items-center justify-between pb-4 border-b border-border last:border-0 last:pb-0">
+                    {topProducts.map((product, i) => (
+                      <div key={product.id} className="flex items-center justify-between pb-4 border-b border-border last:border-0 last:pb-0">
                         <div>
-                          <p className="font-medium">{product}</p>
-                          <p className="text-sm text-muted-foreground">{Math.floor(Math.random() * 50 + 10)} sales</p>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-muted-foreground">${parseFloat(product.price).toFixed(2)}</p>
                         </div>
                         <div className="h-2 w-24 bg-muted rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-primary rounded-full"
-                            style={{ width: `${Math.random() * 60 + 40}%` }}
+                            style={{ width: `${100 - (i * 15)}%` }}
                           />
                         </div>
                       </div>
                     ))}
+                    {topProducts.length === 0 && (
+                      <p className="text-muted-foreground text-center py-4">No products yet</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
