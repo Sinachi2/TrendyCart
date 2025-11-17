@@ -63,7 +63,7 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
   };
 
   return (
-    <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300">
+    <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300 cursor-pointer" onClick={() => navigate(`/product/${id}`)}>
       <div className="relative overflow-hidden bg-muted">
         <img
           src={image}
@@ -98,7 +98,13 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Button onClick={handleAddToCart} className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+        <Button 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddToCart();
+          }} 
+          className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors"
+        >
           <ShoppingCart className="h-4 w-4 mr-2" />
           Add to Cart
         </Button>
