@@ -109,9 +109,9 @@ const Navbar = () => {
                     <User className="mr-2 h-4 w-4" />
                     My Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/orders")}>
+                  <DropdownMenuItem onClick={() => setCartOpen(true)}>
                     <Package className="mr-2 h-4 w-4" />
-                    My Orders
+                    My Cart
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={signOut}>
                     <LogOut className="mr-2 h-4 w-4" />
