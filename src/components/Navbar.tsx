@@ -13,9 +13,11 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.png";
+import { CartSidebar } from "@/components/CartSidebar";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
@@ -84,7 +86,7 @@ const Navbar = () => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="relative" onClick={() => navigate("/cart")}>
+            <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -186,6 +188,8 @@ const Navbar = () => {
           </div>
         )}
       </div>
+
+      <CartSidebar open={cartOpen} onOpenChange={setCartOpen} />
     </nav>
   );
 };
