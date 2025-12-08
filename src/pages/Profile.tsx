@@ -1,31 +1,34 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { 
-  User, Mail, Calendar, ShoppingBag, Package, Home, 
-  BarChart3, Settings, LogOut, CreditCard, TrendingUp,
-  ShoppingCart, DollarSign, CheckCircle
+  User, Home, Settings, LogOut, CreditCard, TrendingUp,
+  ShoppingCart, DollarSign, CheckCircle, Moon, Sun, Heart,
+  BarChart3, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/trendycart-logo.png";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 const Profile = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [stats, setStats] = useState({ totalOrders: 0, totalSpent: 0, cartItems: 0 });
+  const [stats, setStats] = useState({ totalOrders: 0, totalSpent: 0, cartItems: 0, wishlistItems: 0 });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [spendingData, setSpendingData] = useState<any[]>([]);
+  const [monthlyOrders, setMonthlyOrders] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -34,6 +37,7 @@ const Profile = () => {
     }
     loadProfile();
     loadRecentOrders();
+    loadSpendingTrends();
   }, [user, navigate]);
 
   const loadProfile = async () => {
@@ -42,7 +46,7 @@ const Profile = () => {
         .from("profiles")
         .select("full_name, email")
         .eq("id", user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
@@ -51,16 +55,18 @@ const Profile = () => {
         setEmail(data.email || "");
       }
 
-      const [ordersData, cartData] = await Promise.all([
+      const [ordersData, cartData, wishlistData] = await Promise.all([
         supabase.from("orders").select("total_amount").eq("user_id", user?.id),
         supabase.from("cart_items").select("quantity").eq("user_id", user?.id),
+        supabase.from("wishlist").select("id").eq("user_id", user?.id),
       ]);
 
       const totalOrders = ordersData.data?.length || 0;
       const totalSpent = ordersData.data?.reduce((sum, order) => sum + Number(order.total_amount), 0) || 0;
       const cartItems = cartData.data?.reduce((sum, item) => sum + item.quantity, 0) || 0;
+      const wishlistItems = wishlistData.data?.length || 0;
 
-      setStats({ totalOrders, totalSpent, cartItems });
+      setStats({ totalOrders, totalSpent, cartItems, wishlistItems });
     } catch (error) {
       console.error("Error loading profile:", error);
     }
@@ -79,6 +85,50 @@ const Profile = () => {
       setRecentOrders(data || []);
     } catch (error) {
       console.error("Error loading orders:", error);
+    }
+  };
+
+  const loadSpendingTrends = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("total_amount, created_at")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      // Process data for charts
+      const monthlyData: { [key: string]: { spent: number; orders: number } } = {};
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      // Initialize last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const key = months[d.getMonth()];
+        monthlyData[key] = { spent: 0, orders: 0 };
+      }
+
+      data?.forEach((order) => {
+        const date = new Date(order.created_at);
+        const month = months[date.getMonth()];
+        if (monthlyData[month]) {
+          monthlyData[month].spent += Number(order.total_amount);
+          monthlyData[month].orders += 1;
+        }
+      });
+
+      const chartData = Object.entries(monthlyData).map(([month, values]) => ({
+        month,
+        spent: values.spent,
+        orders: values.orders,
+      }));
+
+      setSpendingData(chartData);
+      setMonthlyOrders(chartData);
+    } catch (error) {
+      console.error("Error loading spending trends:", error);
     }
   };
 
@@ -112,20 +162,25 @@ const Profile = () => {
 
   const sidebarItems = [
     { icon: Home, label: "Dashboard", path: "/profile" },
-    { icon: ShoppingBag, label: "Orders", path: "/orders" },
+    { icon: Package, label: "Orders", path: "/orders" },
+    { icon: Heart, label: "Wishlist", path: "/shop" },
     { icon: ShoppingCart, label: "Shop", path: "/shop" },
     { icon: Settings, label: "Settings", path: "/profile" },
   ];
 
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
   return (
     <div className="min-h-screen bg-secondary/30 flex">
       {/* Sidebar */}
-      <aside className="w-72 bg-card border-r border-border min-h-screen p-6 hidden lg:block">
+      <aside className="w-72 bg-card border-r border-border min-h-screen p-6 hidden lg:flex flex-col">
         <Link to="/" className="flex items-center gap-2 mb-10">
-          <img src={logo} alt="TrendyCart" className="h-8 w-auto" />
+          <img src={logo} alt="TrendyCart" className="h-12 w-auto" />
         </Link>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           {sidebarItems.map((item) => (
             <Link
               key={item.label}
@@ -142,7 +197,7 @@ const Profile = () => {
           ))}
         </nav>
 
-        <div className="absolute bottom-6 left-6 right-6">
+        <div className="mt-auto">
           <div className="bg-gradient-to-br from-primary to-accent rounded-2xl p-6 text-primary-foreground">
             <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
               <TrendingUp className="h-6 w-6" />
@@ -171,7 +226,20 @@ const Profile = () => {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="rounded-full">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full" 
+              onClick={() => navigate("/profile")}
+            >
               <User className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full" onClick={signOut}>
@@ -227,13 +295,78 @@ const Profile = () => {
           <Card className="bg-card shadow-sm border-0">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-orange-500/10 flex items-center justify-center">
-                  <CreditCard className="h-7 w-7 text-orange-500" />
+                <div className="h-14 w-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                  <Heart className="h-7 w-7 text-red-500" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Saved</p>
-                  <p className="text-2xl font-bold text-foreground">$0.00</p>
+                  <p className="text-sm text-muted-foreground">Wishlist</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.wishlistItems}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <Card className="bg-card shadow-sm border-0">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Spending Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={spendingData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="spent" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--primary))' }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card shadow-sm border-0">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-accent" />
+                Monthly Orders
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyOrders}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))', 
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="orders" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
