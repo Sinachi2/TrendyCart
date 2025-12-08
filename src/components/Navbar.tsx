@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/trendycart-logo.png";
 import { CartSidebar } from "@/components/CartSidebar";
 
 const Navbar = () => {
@@ -57,10 +57,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <img src={logo} alt="ShopHub" className="h-8 w-8" />
-            <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              ShopHub
-            </span>
+            <img src={logo} alt="TrendyCart" className="h-8 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
