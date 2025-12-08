@@ -1,4 +1,5 @@
 import { ShoppingCart, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,81 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      checkWishlistStatus();
+    }
+  }, [user, id]);
+
+  const checkWishlistStatus = async () => {
+    try {
+      const { data } = await supabase
+        .from("wishlist")
+        .select("id")
+        .eq("user_id", user?.id)
+        .eq("product_id", id)
+        .maybeSingle();
+      
+      setIsWishlisted(!!data);
+    } catch (error) {
+      console.error("Error checking wishlist:", error);
+    }
+  };
+
+  const handleToggleWishlist = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast({
+        title: "Please sign in",
+        description: "You need to be signed in to save items to wishlist",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      if (isWishlisted) {
+        const { error } = await supabase
+          .from("wishlist")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("product_id", id);
+
+        if (error) throw error;
+        setIsWishlisted(false);
+        toast({
+          title: "Removed from wishlist",
+          description: `${name} has been removed from your wishlist`,
+        });
+      } else {
+        const { error } = await supabase
+          .from("wishlist")
+          .insert({ user_id: user.id, product_id: id });
+
+        if (error) throw error;
+        setIsWishlisted(true);
+        toast({
+          title: "Added to wishlist",
+          description: `${name} has been saved to your wishlist`,
+        });
+      }
+      window.dispatchEvent(new Event("wishlistUpdated"));
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist",
+        variant: "destructive",
+      });
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -50,7 +126,6 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
         description: `${name} has been added to your cart`,
       });
 
-      // Trigger a cart count refresh
       window.dispatchEvent(new Event("cartUpdated"));
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -78,9 +153,15 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
         <Button
           size="icon"
           variant="secondary"
-          className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+          className={`absolute top-3 right-3 transition-all ${
+            isWishlisted 
+              ? "opacity-100 bg-red-500 hover:bg-red-600 text-white" 
+              : "opacity-0 group-hover:opacity-100"
+          }`}
+          onClick={handleToggleWishlist}
+          disabled={wishlistLoading}
         >
-          <Heart className="h-4 w-4" />
+          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
         </Button>
       </div>
       
