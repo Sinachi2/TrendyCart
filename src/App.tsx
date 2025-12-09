@@ -16,6 +16,7 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import Profile from "./pages/Profile";
+import Wishlist from "./pages/Wishlist";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />

@@ -1,6 +1,7 @@
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield } from "lucide-react";
+import ProductReviews from "@/components/ProductReviews";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -308,6 +309,11 @@ const ProductDetail = () => {
               </div>
             </Card>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-12">
+          <ProductReviews productId={product.id} />
         </div>
       </main>
     </div>
