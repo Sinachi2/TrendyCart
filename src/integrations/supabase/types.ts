@@ -49,6 +49,30 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          order_updates: boolean | null
+          price_drops: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          order_updates?: boolean | null
+          price_drops?: boolean | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          order_updates?: boolean | null
+          price_drops?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -195,6 +219,44 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          product_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

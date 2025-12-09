@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, X, LogOut, User, Package } from "lucide-react";
+import { ShoppingCart, Menu, X, LogOut, User, Package, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -105,6 +105,10 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     <User className="mr-2 h-4 w-4" />
                     My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/wishlist")}>
+                    <Heart className="mr-2 h-4 w-4" />
+                    My Wishlist
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setCartOpen(true)}>
                     <Package className="mr-2 h-4 w-4" />
