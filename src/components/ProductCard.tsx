@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,13 +12,25 @@ interface ProductCardProps {
   id: string;
   name: string;
   price: number;
-  originalPrice?: number;
-  image: string;
+  originalPrice?: number | null;
+  image: string | null;
   category: string;
-  isNew?: boolean;
+  isNew?: boolean | null;
+  stockQuantity?: number | null;
+  onQuickView?: () => void;
 }
 
-const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }: ProductCardProps) => {
+const ProductCard = ({ 
+  id, 
+  name, 
+  price, 
+  originalPrice, 
+  image, 
+  category, 
+  isNew, 
+  stockQuantity = 0,
+  onQuickView 
+}: ProductCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -108,6 +120,15 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
       return;
     }
 
+    if (stockQuantity !== null && stockQuantity <= 0) {
+      toast({
+        title: "Out of stock",
+        description: "This item is currently unavailable",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from("cart_items")
@@ -137,32 +158,64 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
     }
   };
 
+  const getStockStatus = () => {
+    if (stockQuantity === null || stockQuantity === undefined) return null;
+    if (stockQuantity <= 0) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
+    if (stockQuantity <= 5) return { label: `Only ${stockQuantity} left`, color: "bg-orange-500 text-white" };
+    return { label: "In Stock", color: "bg-green-500 text-white" };
+  };
+
+  const stockStatus = getStockStatus();
+  const isOutOfStock = stockQuantity !== null && stockQuantity <= 0;
+
   return (
     <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300 cursor-pointer" onClick={() => navigate(`/product/${id}`)}>
       <div className="relative overflow-hidden bg-muted">
         <img
-          src={image}
+          src={image || "/placeholder.svg"}
           alt={name}
-          className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+          className={`w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500 ${isOutOfStock ? "opacity-50" : ""}`}
         />
-        {isNew && (
-          <Badge className="absolute top-3 left-3 bg-accent text-accent-foreground">
-            New
-          </Badge>
-        )}
-        <Button
-          size="icon"
-          variant="secondary"
-          className={`absolute top-3 right-3 transition-all ${
-            isWishlisted 
-              ? "opacity-100 bg-red-500 hover:bg-red-600 text-white" 
-              : "opacity-0 group-hover:opacity-100"
-          }`}
-          onClick={handleToggleWishlist}
-          disabled={wishlistLoading}
-        >
-          <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
-        </Button>
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {isNew && (
+            <Badge className="bg-accent text-accent-foreground">
+              New
+            </Badge>
+          )}
+          {stockStatus && (
+            <Badge className={stockStatus.color}>
+              {stockStatus.label}
+            </Badge>
+          )}
+        </div>
+        <div className="absolute top-3 right-3 flex flex-col gap-2">
+          <Button
+            size="icon"
+            variant="secondary"
+            className={`transition-all ${
+              isWishlisted 
+                ? "opacity-100 bg-red-500 hover:bg-red-600 text-white" 
+                : "opacity-0 group-hover:opacity-100"
+            }`}
+            onClick={handleToggleWishlist}
+            disabled={wishlistLoading}
+          >
+            <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
+          </Button>
+          {onQuickView && (
+            <Button
+              size="icon"
+              variant="secondary"
+              className="opacity-0 group-hover:opacity-100 transition-all"
+              onClick={(e) => {
+                e.stopPropagation();
+                onQuickView();
+              }}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
       
       <CardContent className="p-4">
@@ -185,9 +238,10 @@ const ProductCard = ({ id, name, price, originalPrice, image, category, isNew }:
             handleAddToCart();
           }} 
           className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors"
+          disabled={isOutOfStock}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
-          Add to Cart
+          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
         </Button>
       </CardFooter>
     </Card>

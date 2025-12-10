@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
+import ProductQuickView from "@/components/ProductQuickView";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -23,13 +25,29 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ITEMS_PER_PAGE = 12;
 
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  original_price: number | null;
+  image_url: string | null;
+  category: string;
+  description: string | null;
+  is_new: boolean | null;
+  stock_quantity: number | null;
+  created_at: string | null;
+}
+
 const Shop = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [maxPrice, setMaxPrice] = useState(1000);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -44,7 +62,15 @@ const Shop = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      const productsData = data || [];
+      setProducts(productsData);
+      
+      // Calculate max price
+      if (productsData.length > 0) {
+        const max = Math.ceil(Math.max(...productsData.map(p => p.price)));
+        setMaxPrice(max);
+        setPriceRange([0, max]);
+      }
     } catch (error) {
       console.error("Error loading products:", error);
     } finally {
@@ -56,7 +82,8 @@ const Shop = () => {
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+    return matchesSearch && matchesCategory && matchesPrice;
   });
 
   // Sort products
@@ -67,9 +94,8 @@ const Shop = () => {
       case "price-high":
         return b.price - a.price;
       case "newest":
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       case "popular":
-        // Sort by is_new for now (could be enhanced with actual popularity data)
         return (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0);
       default:
         return 0;
@@ -86,7 +112,7 @@ const Shop = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [searchQuery, selectedCategory, sortBy, priceRange]);
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
 
@@ -109,7 +135,7 @@ const Shop = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex flex-col lg:flex-row gap-4 mb-8">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -122,7 +148,7 @@ const Shop = () => {
           </div>
           
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-48">
+            <SelectTrigger className="w-full lg:w-48">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -135,7 +161,7 @@ const Shop = () => {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-48">
+            <SelectTrigger className="w-full lg:w-48">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -145,6 +171,24 @@ const Shop = () => {
               <SelectItem value="popular">Popular</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Price Range Filter */}
+        <div className="mb-8 p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium">Price Range</span>
+            <span className="text-sm text-muted-foreground">
+              ${priceRange[0]} - ${priceRange[1]}
+            </span>
+          </div>
+          <Slider
+            value={priceRange}
+            onValueChange={(value) => setPriceRange(value as [number, number])}
+            max={maxPrice}
+            min={0}
+            step={10}
+            className="w-full"
+          />
         </div>
 
         {/* Results count */}
@@ -170,6 +214,8 @@ const Shop = () => {
                   image={product.image_url}
                   category={product.category}
                   isNew={product.is_new}
+                  stockQuantity={product.stock_quantity}
+                  onQuickView={() => setQuickViewProduct(product)}
                 />
               ))}
             </div>
@@ -217,6 +263,13 @@ const Shop = () => {
           </>
         )}
       </div>
+
+      {/* Quick View Modal */}
+      <ProductQuickView
+        product={quickViewProduct}
+        open={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </div>
   );
 };
