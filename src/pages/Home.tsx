@@ -1,33 +1,11 @@
 import { ArrowRight, Truck, Shield, Headphones } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import ProductCard from "@/components/ProductCard";
 import Navbar from "@/components/Navbar";
+import FeaturedCarousel from "@/components/FeaturedCarousel";
 import heroBg from "@/assets/hero-bg.jpg";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
-  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
-
-  useEffect(() => {
-    loadFeaturedProducts();
-  }, []);
-
-  const loadFeaturedProducts = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .limit(4)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setFeaturedProducts(data || []);
-    } catch (error) {
-      console.error("Error loading featured products:", error);
-    }
-  };
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -101,7 +79,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Featured Products */}
+      {/* Featured Products Carousel */}
       <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -111,22 +89,11 @@ const Home = () => {
             </p>
           </div>
           
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {featuredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                price={product.price}
-                originalPrice={product.original_price}
-                image={product.image_url}
-                category={product.category}
-                isNew={product.is_new}
-              />
-            ))}
+          <div className="relative px-12">
+            <FeaturedCarousel />
           </div>
 
-          <div className="text-center">
+          <div className="text-center mt-8">
             <Button asChild size="lg" variant="outline">
               <Link to="/shop">
                 View All Products <ArrowRight className="ml-2 h-5 w-5" />
