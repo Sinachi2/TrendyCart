@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
 import logo from "@/assets/logo.png";
 
 const Auth = () => {
@@ -142,6 +143,7 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <PasswordStrengthIndicator password={password} />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing in..." : "Sign In"}
@@ -190,6 +192,7 @@ const Auth = () => {
                     required
                     minLength={6}
                   />
+                  <PasswordStrengthIndicator password={password} />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Sign Up"}
