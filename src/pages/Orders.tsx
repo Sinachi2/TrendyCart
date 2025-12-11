@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ChevronRight } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,11 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { OrderTracking } from "@/components/OrderTracking";
 
 interface OrderItem {
   id: string;
@@ -30,6 +26,10 @@ interface Order {
   status: string;
   total_amount: number;
   shipping_address: any;
+  tracking_number: string | null;
+  carrier: string | null;
+  estimated_delivery: string | null;
+  tracking_url: string | null;
   order_items: OrderItem[];
 }
 
@@ -39,6 +39,7 @@ const Orders = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -58,6 +59,10 @@ const Orders = () => {
           status,
           total_amount,
           shipping_address,
+          tracking_number,
+          carrier,
+          estimated_delivery,
+          tracking_url,
           order_items (
             id,
             product_name,
@@ -86,18 +91,22 @@ const Orders = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
-        return "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400";
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400";
       case "processing":
         return "bg-blue-500/10 text-blue-700 dark:text-blue-400";
       case "shipped":
-        return "bg-purple-500/10 text-purple-700 dark:text-purple-400";
+        return "bg-violet-500/10 text-violet-700 dark:text-violet-400";
       case "delivered":
-        return "bg-green-500/10 text-green-700 dark:text-green-400";
+        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
       case "cancelled":
         return "bg-red-500/10 text-red-700 dark:text-red-400";
       default:
-        return "bg-gray-500/10 text-gray-700 dark:text-gray-400";
+        return "bg-muted text-muted-foreground";
     }
+  };
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
   if (loading) {
@@ -108,7 +117,7 @@ const Orders = () => {
           <Skeleton className="h-10 w-48 mb-8" />
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-48 w-full" />
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
             ))}
           </div>
         </div>
@@ -120,102 +129,140 @@ const Orders = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
         <h1 className="text-3xl font-bold mb-8">Order History</h1>
 
         {orders.length === 0 ? (
-          <Card className="p-12 text-center">
-            <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <Card className="p-12 text-center bg-card/50 border-border/50">
+            <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground/30" />
             <h2 className="text-2xl font-semibold mb-2">No orders yet</h2>
             <p className="text-muted-foreground mb-6">
               Start shopping to see your orders here!
             </p>
-            <Button onClick={() => navigate("/shop")}>Browse Products</Button>
+            <Button onClick={() => navigate("/shop")} className="rounded-xl">
+              Browse Products
+            </Button>
           </Card>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
-              <Collapsible key={order.id}>
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg mb-2">
-                          Order #{order.id.slice(0, 8).toUpperCase()}
-                        </CardTitle>
-                        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                          <span>
-                            {new Date(order.created_at).toLocaleDateString()}
-                          </span>
-                          <span>•</span>
-                          <span>{order.order_items.length} items</span>
-                          <span>•</span>
-                          <span className="font-semibold text-foreground">
-                            ${order.total_amount.toFixed(2)}
-                          </span>
+            {orders.map((order) => {
+              const isExpanded = expandedOrder === order.id;
+              return (
+                <Card key={order.id} className="bg-card/50 backdrop-blur border-border/50 overflow-hidden">
+                  {/* Order Header */}
+                  <button
+                    onClick={() => toggleExpand(order.id)}
+                    className="w-full text-left"
+                  >
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <CardTitle className="text-lg">
+                              Order #{order.id.slice(0, 8).toUpperCase()}
+                            </CardTitle>
+                            <Badge className={getStatusColor(order.status)}>
+                              {order.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                            <span>
+                              {new Date(order.created_at).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              })}
+                            </span>
+                            <span>•</span>
+                            <span>{order.order_items.length} items</span>
+                            <span>•</span>
+                            <span className="font-semibold text-foreground">
+                              ${order.total_amount.toFixed(2)}
+                            </span>
+                            {order.tracking_number && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1 text-primary">
+                                  <Truck className="h-3.5 w-3.5" />
+                                  Tracking available
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {isExpanded ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status.toUpperCase()}
-                        </Badge>
-                        <CollapsibleTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
-                        </CollapsibleTrigger>
-                      </div>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
+                  </button>
 
-                  <CollapsibleContent>
-                    <CardContent className="pt-0">
-                      <Separator className="mb-4" />
+                  {/* Expanded Content */}
+                  {isExpanded && (
+                    <CardContent className="pt-0 space-y-6">
+                      <Separator />
+
+                      {/* Order Tracking */}
+                      <OrderTracking
+                        orderId={order.id}
+                        status={order.status}
+                        trackingNumber={order.tracking_number}
+                        carrier={order.carrier}
+                        estimatedDelivery={order.estimated_delivery}
+                        trackingUrl={order.tracking_url}
+                      />
 
                       {/* Order Items */}
-                      <div className="space-y-3 mb-6">
-                        <h3 className="font-semibold">Items</h3>
-                        {order.order_items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex justify-between items-center py-2"
-                          >
-                            <div>
-                              <p className="font-medium">{item.product_name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                Quantity: {item.quantity} × ${item.product_price}
+                      <div className="space-y-3">
+                        <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                          Items
+                        </h3>
+                        <div className="bg-muted/30 rounded-xl p-4 space-y-3">
+                          {order.order_items.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex justify-between items-center"
+                            >
+                              <div>
+                                <p className="font-medium">{item.product_name}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.quantity} × ${item.product_price.toFixed(2)}
+                                </p>
+                              </div>
+                              <p className="font-semibold">
+                                ${item.subtotal.toFixed(2)}
                               </p>
                             </div>
-                            <p className="font-semibold">
-                              ${item.subtotal.toFixed(2)}
-                            </p>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
 
                       {/* Shipping Address */}
                       {order.shipping_address && (
-                        <div>
-                          <h3 className="font-semibold mb-2">
+                        <div className="space-y-3">
+                          <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                             Shipping Address
                           </h3>
-                          <div className="text-sm text-muted-foreground">
-                            <p>{order.shipping_address.fullName}</p>
-                            <p>{order.shipping_address.address}</p>
-                            <p>
-                              {order.shipping_address.city},{" "}
-                              {order.shipping_address.state}{" "}
+                          <div className="bg-muted/30 rounded-xl p-4 text-sm">
+                            <p className="font-medium">{order.shipping_address.fullName}</p>
+                            <p className="text-muted-foreground">{order.shipping_address.address}</p>
+                            <p className="text-muted-foreground">
+                              {order.shipping_address.city}, {order.shipping_address.state}{" "}
                               {order.shipping_address.zipCode}
                             </p>
-                            <p>{order.shipping_address.country}</p>
+                            <p className="text-muted-foreground">{order.shipping_address.country}</p>
                           </div>
                         </div>
                       )}
                     </CardContent>
-                  </CollapsibleContent>
+                  )}
                 </Card>
-              </Collapsible>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
