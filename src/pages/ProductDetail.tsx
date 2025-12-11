@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield, GitCompareArrows } from "lucide-react";
 import ProductReviews from "@/components/ProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
+import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
+import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 interface Product {
   id: string;
@@ -32,9 +34,23 @@ const ProductDetail = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { addToCompare, removeFromCompare, isInCompare } = useProductCompare();
+  const { addToRecentlyViewed } = useRecentlyViewed();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+
+  // Track recently viewed when product loads
+  useEffect(() => {
+    if (product) {
+      addToRecentlyViewed({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        category: product.category,
+      });
+    }
+  }, [product]);
 
   const handleToggleCompare = () => {
     if (!product) return;
@@ -347,6 +363,9 @@ const ProductDetail = () => {
         <div className="mt-12">
           <ProductReviews productId={product.id} />
         </div>
+
+        {/* Recently Viewed */}
+        <RecentlyViewedProducts />
       </main>
     </div>
   );
