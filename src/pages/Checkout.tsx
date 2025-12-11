@@ -11,9 +11,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import CouponInput from "@/components/CouponInput";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+
+interface Coupon {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_order_amount: number;
+}
 
 const shippingSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
@@ -60,6 +69,13 @@ const Checkout = () => {
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [useNewAddress, setUseNewAddress] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [discount, setDiscount] = useState(0);
+
+  const handleCouponApplied = (coupon: Coupon | null, discountAmount: number) => {
+    setAppliedCoupon(coupon);
+    setDiscount(discountAmount);
+  };
 
   const {
     register,
@@ -174,7 +190,7 @@ const Checkout = () => {
         0
       );
       const shipping = subtotal > 50 ? 0 : 9.99;
-      const total = subtotal + shipping;
+      const total = subtotal + shipping - discount;
 
       // Create order
       const { data: order, error: orderError } = await supabase
@@ -182,7 +198,7 @@ const Checkout = () => {
         .insert({
           user_id: user.id,
           total_amount: total,
-          shipping_address: data,
+          shipping_address: { ...data, coupon_code: appliedCoupon?.code || null, discount_applied: discount },
           status: "pending",
         })
         .select()
@@ -242,7 +258,7 @@ const Checkout = () => {
     0
   );
   const shipping = subtotal > 50 ? 0 : 9.99;
-  const total = subtotal + shipping;
+  const total = subtotal + shipping - discount;
 
   if (loading) {
     return (
@@ -503,9 +519,25 @@ const Checkout = () => {
 
                   <Separator />
 
+                  {/* Coupon Input */}
+                  <CouponInput
+                    subtotal={subtotal}
+                    onCouponApplied={handleCouponApplied}
+                    appliedCoupon={appliedCoupon}
+                  />
+
+                  <Separator />
+
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-primary">${total.toFixed(2)}</span>
+                    <div className="text-right">
+                      {discount > 0 && (
+                        <div className="text-sm font-normal text-green-600 dark:text-green-400">
+                          -${discount.toFixed(2)} discount
+                        </div>
+                      )}
+                      <span className="text-primary">${total.toFixed(2)}</span>
+                    </div>
                   </div>
 
                   <Button

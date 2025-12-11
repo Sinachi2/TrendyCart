@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart, Eye } from "lucide-react";
+import { ShoppingCart, Heart, Eye, GitCompareArrows } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { useProductCompare } from "@/contexts/ProductCompareContext";
 
 interface ProductCardProps {
   id: string;
@@ -17,6 +18,7 @@ interface ProductCardProps {
   category: string;
   isNew?: boolean | null;
   stockQuantity?: number | null;
+  description?: string | null;
   onQuickView?: () => void;
 }
 
@@ -29,13 +31,43 @@ const ProductCard = ({
   category, 
   isNew, 
   stockQuantity = 0,
+  description,
   onQuickView 
 }: ProductCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { addToCompare, removeFromCompare, isInCompare } = useProductCompare();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+
+  const handleToggleCompare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const product = {
+      id,
+      name,
+      price,
+      original_price: originalPrice ?? null,
+      image_url: image,
+      category,
+      description: description ?? null,
+      stock_quantity: stockQuantity,
+    };
+
+    if (isInCompare(id)) {
+      removeFromCompare(id);
+      toast({
+        title: "Removed from compare",
+        description: `${name} removed from comparison`,
+      });
+    } else {
+      addToCompare(product);
+      toast({
+        title: "Added to compare",
+        description: `${name} added to comparison`,
+      });
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -215,6 +247,18 @@ const ProductCard = ({
               <Eye className="h-4 w-4" />
             </Button>
           )}
+          <Button
+            size="icon"
+            variant="secondary"
+            className={`transition-all ${
+              isInCompare(id)
+                ? "opacity-100 bg-primary hover:bg-primary/90 text-primary-foreground"
+                : "opacity-0 group-hover:opacity-100"
+            }`}
+            onClick={handleToggleCompare}
+          >
+            <GitCompareArrows className="h-4 w-4" />
+          </Button>
         </div>
       </div>
       
