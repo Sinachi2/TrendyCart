@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +37,19 @@ interface CartItem {
   };
 }
 
+interface SavedAddress {
+  id: string;
+  label: string;
+  full_name: string;
+  street_address: string;
+  apartment: string | null;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  is_default: boolean;
+}
+
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -43,10 +57,14 @@ const Checkout = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [placing, setPlacing] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [useNewAddress, setUseNewAddress] = useState(false);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<ShippingFormData>({
     resolver: zodResolver(shippingSchema),
@@ -57,14 +75,13 @@ const Checkout = () => {
       navigate("/auth");
       return;
     }
-    loadCart();
+    loadData();
   }, [user, navigate]);
 
-  const loadCart = async () => {
+  const loadData = async () => {
     try {
-      const { data, error } = await supabase
-        .from("cart_items")
-        .select(`
+      const [cartRes, addressRes] = await Promise.all([
+        supabase.from("cart_items").select(`
           id,
           quantity,
           products (
@@ -73,32 +90,78 @@ const Checkout = () => {
             price,
             image_url
           )
-        `);
+        `),
+        supabase
+          .from("addresses")
+          .select("*")
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (error) throw error;
+      if (cartRes.error) throw cartRes.error;
 
-      if (!data || data.length === 0) {
+      if (!cartRes.data || cartRes.data.length === 0) {
         navigate("/cart");
         return;
       }
 
-      const formattedData = data?.map((item: any) => ({
+      const formattedData = cartRes.data?.map((item: any) => ({
         id: item.id,
         quantity: item.quantity,
         product: item.products,
       })) || [];
 
       setCartItems(formattedData);
+      setSavedAddresses(addressRes.data || []);
+
+      // Auto-select default address
+      const defaultAddr = addressRes.data?.find((a) => a.is_default);
+      if (defaultAddr) {
+        setSelectedAddressId(defaultAddr.id);
+        fillFormWithAddress(defaultAddr);
+      } else if (addressRes.data && addressRes.data.length > 0) {
+        setSelectedAddressId(addressRes.data[0].id);
+        fillFormWithAddress(addressRes.data[0]);
+      } else {
+        setUseNewAddress(true);
+      }
     } catch (error) {
-      console.error("Error loading cart:", error);
+      console.error("Error loading data:", error);
       toast({
         title: "Error",
-        description: "Failed to load cart items",
+        description: "Failed to load checkout data",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const fillFormWithAddress = (addr: SavedAddress) => {
+    setValue("fullName", addr.full_name);
+    setValue("address", addr.street_address + (addr.apartment ? `, ${addr.apartment}` : ""));
+    setValue("city", addr.city);
+    setValue("state", addr.state);
+    setValue("zipCode", addr.postal_code);
+    setValue("country", addr.country);
+  };
+
+  const handleAddressSelect = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    setUseNewAddress(false);
+    const addr = savedAddresses.find((a) => a.id === addressId);
+    if (addr) fillFormWithAddress(addr);
+  };
+
+  const handleUseNewAddress = () => {
+    setSelectedAddressId(null);
+    setUseNewAddress(true);
+    setValue("fullName", "");
+    setValue("address", "");
+    setValue("city", "");
+    setValue("state", "");
+    setValue("zipCode", "");
+    setValue("country", "");
   };
 
   const onSubmit = async (data: ShippingFormData) => {
@@ -210,98 +273,172 @@ const Checkout = () => {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Shipping Information */}
             <div className="lg:col-span-2 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Shipping Information</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      {...register("fullName")}
-                      placeholder="John Doe"
-                    />
-                    {errors.fullName && (
-                      <p className="text-sm text-destructive mt-1">
-                        {errors.fullName.message}
-                      </p>
-                    )}
-                  </div>
+              {/* Saved Addresses */}
+              {savedAddresses.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      Saved Addresses
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <RadioGroup
+                      value={selectedAddressId || "new"}
+                      onValueChange={(val) => {
+                        if (val === "new") {
+                          handleUseNewAddress();
+                        } else {
+                          handleAddressSelect(val);
+                        }
+                      }}
+                      className="space-y-3"
+                    >
+                      {savedAddresses.map((addr) => (
+                        <label
+                          key={addr.id}
+                          className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                            selectedAddressId === addr.id
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50"
+                          }`}
+                        >
+                          <RadioGroupItem value={addr.id} className="mt-1" />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium">{addr.label}</span>
+                              {addr.is_default && (
+                                <span className="text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {addr.full_name}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {addr.street_address}
+                              {addr.apartment && `, ${addr.apartment}`}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {addr.city}, {addr.state} {addr.postal_code}
+                            </p>
+                          </div>
+                          {selectedAddressId === addr.id && (
+                            <Check className="h-5 w-5 text-primary shrink-0" />
+                          )}
+                        </label>
+                      ))}
+                      <label
+                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                          useNewAddress
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <RadioGroupItem value="new" />
+                        <span className="font-medium">Use a new address</span>
+                      </label>
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
+              )}
 
-                  <div>
-                    <Label htmlFor="address">Address</Label>
-                    <Input
-                      id="address"
-                      {...register("address")}
-                      placeholder="123 Main St"
-                    />
-                    {errors.address && (
-                      <p className="text-sm text-destructive mt-1">
-                        {errors.address.message}
-                      </p>
-                    )}
-                  </div>
+              {/* Address Form */}
+              {(useNewAddress || savedAddresses.length === 0) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Shipping Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        {...register("fullName")}
+                        placeholder="John Doe"
+                      />
+                      {errors.fullName && (
+                        <p className="text-sm text-destructive mt-1">
+                          {errors.fullName.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="city">City</Label>
+                      <Label htmlFor="address">Address</Label>
                       <Input
-                        id="city"
-                        {...register("city")}
-                        placeholder="New York"
+                        id="address"
+                        {...register("address")}
+                        placeholder="123 Main St"
                       />
-                      {errors.city && (
+                      {errors.address && (
                         <p className="text-sm text-destructive mt-1">
-                          {errors.city.message}
+                          {errors.address.message}
                         </p>
                       )}
                     </div>
-                    <div>
-                      <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        {...register("state")}
-                        placeholder="NY"
-                      />
-                      {errors.state && (
-                        <p className="text-sm text-destructive mt-1">
-                          {errors.state.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="zipCode">ZIP Code</Label>
-                      <Input
-                        id="zipCode"
-                        {...register("zipCode")}
-                        placeholder="10001"
-                      />
-                      {errors.zipCode && (
-                        <p className="text-sm text-destructive mt-1">
-                          {errors.zipCode.message}
-                        </p>
-                      )}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          {...register("city")}
+                          placeholder="New York"
+                        />
+                        {errors.city && (
+                          <p className="text-sm text-destructive mt-1">
+                            {errors.city.message}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="state">State</Label>
+                        <Input
+                          id="state"
+                          {...register("state")}
+                          placeholder="NY"
+                        />
+                        {errors.state && (
+                          <p className="text-sm text-destructive mt-1">
+                            {errors.state.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="country">Country</Label>
-                      <Input
-                        id="country"
-                        {...register("country")}
-                        placeholder="USA"
-                      />
-                      {errors.country && (
-                        <p className="text-sm text-destructive mt-1">
-                          {errors.country.message}
-                        </p>
-                      )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="zipCode">ZIP Code</Label>
+                        <Input
+                          id="zipCode"
+                          {...register("zipCode")}
+                          placeholder="10001"
+                        />
+                        {errors.zipCode && (
+                          <p className="text-sm text-destructive mt-1">
+                            {errors.zipCode.message}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          {...register("country")}
+                          placeholder="USA"
+                        />
+                        {errors.country && (
+                          <p className="text-sm text-destructive mt-1">
+                            {errors.country.message}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )}
 
               <Card>
                 <CardHeader>
