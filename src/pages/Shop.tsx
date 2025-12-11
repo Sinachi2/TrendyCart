@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import ProductQuickView from "@/components/ProductQuickView";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { Slider } from "@/components/ui/slider";
 import {
   Select,
@@ -136,16 +134,11 @@ const Shop = () => {
 
         {/* Filters */}
         <div className="flex flex-col lg:flex-row gap-4 mb-8">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search products..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <SearchAutocomplete
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search products..."
+          />
           
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full lg:w-48">

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
+import DealsSection from "@/components/DealsSection";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Home = () => {
@@ -78,6 +79,9 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* Deals Section */}
+      <DealsSection />
 
       {/* Featured Products Carousel */}
       <section className="py-20">
