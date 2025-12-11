@@ -174,30 +174,78 @@ export type Database = {
       }
       orders: {
         Row: {
+          carrier: string | null
           created_at: string | null
+          estimated_delivery: string | null
           id: string
           shipping_address: Json | null
           status: string
           total_amount: number
+          tracking_number: string | null
+          tracking_url: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          carrier?: string | null
           created_at?: string | null
+          estimated_delivery?: string | null
           id?: string
           shipping_address?: Json | null
           status?: string
           total_amount: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          carrier?: string | null
           created_at?: string | null
+          estimated_delivery?: string | null
           id?: string
           shipping_address?: Json | null
           status?: string
           total_amount?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payment_methods: {
+        Row: {
+          card_brand: string
+          card_last_four: string
+          created_at: string
+          exp_month: number
+          exp_year: number
+          id: string
+          is_default: boolean
+          stripe_payment_method_id: string | null
+          user_id: string
+        }
+        Insert: {
+          card_brand: string
+          card_last_four: string
+          created_at?: string
+          exp_month: number
+          exp_year: number
+          id?: string
+          is_default?: boolean
+          stripe_payment_method_id?: string | null
+          user_id: string
+        }
+        Update: {
+          card_brand?: string
+          card_last_four?: string
+          created_at?: string
+          exp_month?: number
+          exp_year?: number
+          id?: string
+          is_default?: boolean
+          stripe_payment_method_id?: string | null
           user_id?: string
         }
         Relationships: []
