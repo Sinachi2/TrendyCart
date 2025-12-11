@@ -258,7 +258,7 @@ const UserDashboard = () => {
                     onClick={() => navigate("/profile")}
                   >
                     <User className="h-5 w-5 mr-3 text-blue-500" />
-                    Edit Profile
+                    Edit My Profile
                     <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
                   </Button>
                   <Button
@@ -267,7 +267,7 @@ const UserDashboard = () => {
                     onClick={() => navigate("/orders")}
                   >
                     <Package className="h-5 w-5 mr-3 text-emerald-500" />
-                    View All Orders
+                    View All My Orders
                     <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
                   </Button>
                   <Button
