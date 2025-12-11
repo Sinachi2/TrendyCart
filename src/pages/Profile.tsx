@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
-  User, Home, Settings, LogOut, CreditCard, TrendingUp,
-  ShoppingCart, DollarSign, CheckCircle, Moon, Sun, Heart,
-  BarChart3, Package
+  User, Home, LogOut, Moon, Sun, Heart,
+  ShoppingCart, Package, Settings, ChevronRight, Mail, Calendar
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,11 +13,10 @@ import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/trendycart-logo.png";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
@@ -27,8 +25,6 @@ const Profile = () => {
   const [email, setEmail] = useState("");
   const [stats, setStats] = useState({ totalOrders: 0, totalSpent: 0, cartItems: 0, wishlistItems: 0 });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [spendingData, setSpendingData] = useState<any[]>([]);
-  const [monthlyOrders, setMonthlyOrders] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -37,7 +33,6 @@ const Profile = () => {
     }
     loadProfile();
     loadRecentOrders();
-    loadSpendingTrends();
   }, [user, navigate]);
 
   const loadProfile = async () => {
@@ -79,56 +74,12 @@ const Profile = () => {
         .select("*")
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(3);
 
       if (error) throw error;
       setRecentOrders(data || []);
     } catch (error) {
       console.error("Error loading orders:", error);
-    }
-  };
-
-  const loadSpendingTrends = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("total_amount, created_at")
-        .eq("user_id", user?.id)
-        .order("created_at", { ascending: true });
-
-      if (error) throw error;
-
-      // Process data for charts
-      const monthlyData: { [key: string]: { spent: number; orders: number } } = {};
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
-      // Initialize last 6 months
-      for (let i = 5; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const key = months[d.getMonth()];
-        monthlyData[key] = { spent: 0, orders: 0 };
-      }
-
-      data?.forEach((order) => {
-        const date = new Date(order.created_at);
-        const month = months[date.getMonth()];
-        if (monthlyData[month]) {
-          monthlyData[month].spent += Number(order.total_amount);
-          monthlyData[month].orders += 1;
-        }
-      });
-
-      const chartData = Object.entries(monthlyData).map(([month, values]) => ({
-        month,
-        spent: values.spent,
-        orders: values.orders,
-      }));
-
-      setSpendingData(chartData);
-      setMonthlyOrders(chartData);
-    } catch (error) {
-      console.error("Error loading spending trends:", error);
     }
   };
 
@@ -145,8 +96,8 @@ const Profile = () => {
       if (error) throw error;
 
       toast({
-        title: "Success",
-        description: "Profile updated successfully",
+        title: "Profile updated",
+        description: "Your changes have been saved successfully.",
       });
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -160,333 +111,259 @@ const Profile = () => {
     }
   };
 
-  const sidebarItems = [
-    { icon: Home, label: "Dashboard", path: "/profile" },
-    { icon: Package, label: "Orders", path: "/orders" },
-    { icon: Heart, label: "Wishlist", path: "/shop" },
-    { icon: ShoppingCart, label: "Shop", path: "/shop" },
-    { icon: Settings, label: "Settings", path: "/profile" },
-  ];
-
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
+  };
+
+  const quickActions = [
+    { icon: Package, label: "My Orders", description: "Track your purchases", path: "/orders", color: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+    { icon: Heart, label: "Wishlist", description: `${stats.wishlistItems} saved items`, path: "/wishlist", color: "bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400" },
+    { icon: ShoppingCart, label: "My Cart", description: `${stats.cartItems} items`, path: "/cart", color: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    { icon: Home, label: "Browse Shop", description: "Discover new products", path: "/shop", color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+  ];
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "delivered": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400";
+      case "shipped": return "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400";
+      case "processing": return "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400";
+      default: return "bg-muted text-muted-foreground";
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-secondary/30 flex">
-      {/* Sidebar */}
-      <aside className="w-72 bg-card border-r border-border min-h-screen p-6 hidden lg:flex flex-col">
-        <Link to="/" className="flex items-center gap-2 mb-10">
-          <img src={logo} alt="TrendyCart" className="h-12 w-auto" />
-        </Link>
-
-        <nav className="space-y-2 flex-1">
-          {sidebarItems.map((item) => (
-            <Link
-              key={item.label}
-              to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                location.pathname === item.path
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium">{item.label}</span>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
+      {/* Header */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-background/80 border-b border-border/50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logo} alt="TrendyCart" className="h-8 w-auto" />
             </Link>
-          ))}
-        </nav>
-
-        <div className="mt-auto">
-          <div className="bg-gradient-to-br from-primary to-accent rounded-2xl p-6 text-primary-foreground">
-            <div className="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
-              <TrendingUp className="h-6 w-6" />
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-9 w-9"
+                onClick={toggleTheme}
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground" 
+                onClick={signOut}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
-            <h4 className="font-bold text-lg mb-1">Shop More</h4>
-            <p className="text-sm opacity-80 mb-4">Explore our latest collection</p>
-            <Button 
-              variant="secondary" 
-              className="w-full bg-white text-primary hover:bg-white/90"
-              onClick={() => navigate("/shop")}
-            >
-              Browse Shop
-            </Button>
           </div>
         </div>
-      </aside>
+      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-10 overflow-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <p className="text-muted-foreground mb-1">Welcome back,</p>
-            <h1 className="text-3xl font-bold text-foreground">
-              {fullName || "User"}
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        {/* Welcome Section */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+          <Avatar className="h-20 w-20 ring-4 ring-background shadow-lg">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white text-2xl font-semibold">
+              {getInitials(fullName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Welcome back</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              {fullName || "Hello there!"}
             </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full"
-              onClick={toggleTheme}
-            >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full" 
-              onClick={() => navigate("/profile")}
-            >
-              <User className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={signOut}>
-              <LogOut className="h-5 w-5" />
-            </Button>
+            <p className="text-muted-foreground flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              {email}
+            </p>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-card shadow-sm border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <BarChart3 className="h-7 w-7 text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Orders</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalOrders}</p>
-                </div>
-              </div>
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <Card className="bg-card/50 backdrop-blur border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <p className="text-3xl font-bold text-foreground">{stats.totalOrders}</p>
+              <p className="text-sm text-muted-foreground mt-1">Orders</p>
             </CardContent>
           </Card>
-
-          <Card className="bg-card shadow-sm border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-green-500/10 flex items-center justify-center">
-                  <DollarSign className="h-7 w-7 text-green-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Spent</p>
-                  <p className="text-2xl font-bold text-foreground">${stats.totalSpent.toFixed(2)}</p>
-                </div>
-              </div>
+          <Card className="bg-card/50 backdrop-blur border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <p className="text-3xl font-bold text-foreground">${stats.totalSpent.toFixed(0)}</p>
+              <p className="text-sm text-muted-foreground mt-1">Total Spent</p>
             </CardContent>
           </Card>
-
-          <Card className="bg-card shadow-sm border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-accent/10 flex items-center justify-center">
-                  <ShoppingCart className="h-7 w-7 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Cart Items</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.cartItems}</p>
-                </div>
-              </div>
+          <Card className="bg-card/50 backdrop-blur border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <p className="text-3xl font-bold text-foreground">{stats.cartItems}</p>
+              <p className="text-sm text-muted-foreground mt-1">Cart Items</p>
             </CardContent>
           </Card>
-
-          <Card className="bg-card shadow-sm border-0">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="h-14 w-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
-                  <Heart className="h-7 w-7 text-red-500" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Wishlist</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.wishlistItems}</p>
-                </div>
-              </div>
+          <Card className="bg-card/50 backdrop-blur border-border/50 shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-5">
+              <p className="text-3xl font-bold text-foreground">{stats.wishlistItems}</p>
+              <p className="text-sm text-muted-foreground mt-1">Wishlist</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid lg:grid-cols-2 gap-6 mb-8">
-          <Card className="bg-card shadow-sm border-0">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Spending Trends
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={spendingData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="spent" 
-                      stroke="hsl(var(--primary))" 
-                      strokeWidth={3}
-                      dot={{ fill: 'hsl(var(--primary))' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card shadow-sm border-0">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-accent" />
-                Monthly Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyOrders}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))', 
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar dataKey="orders" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Profile Card */}
-          <Card className="lg:col-span-2 bg-card shadow-sm border-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-                <span>Account Information</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdateProfile} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-muted-foreground">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      disabled
-                      className="bg-muted border-0 h-12 rounded-xl"
-                    />
+        {/* Quick Actions */}
+        <section>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action) => (
+              <Card 
+                key={action.label}
+                className="group cursor-pointer bg-card/50 backdrop-blur border-border/50 shadow-sm hover:shadow-lg hover:border-primary/20 transition-all duration-300"
+                onClick={() => navigate(action.path)}
+              >
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${action.color} transition-transform group-hover:scale-105`}>
+                    <action.icon className="h-5 w-5" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground">{action.label}</p>
+                    <p className="text-sm text-muted-foreground truncate">{action.description}</p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        <div className="grid lg:grid-cols-5 gap-8">
+          {/* Profile Settings */}
+          <section className="lg:col-span-3">
+            <Card className="bg-card/50 backdrop-blur border-border/50 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Settings className="h-5 w-5 text-primary" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-foreground">Profile Settings</h2>
+                </div>
+                
+                <form onSubmit={handleUpdateProfile} className="space-y-5">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-muted-foreground">Full Name</Label>
+                    <Label htmlFor="fullName" className="text-sm text-muted-foreground">Full Name</Label>
                     <Input
                       id="fullName"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="Enter your full name"
-                      className="border-border h-12 rounded-xl"
+                      className="h-11 rounded-xl border-border/50 bg-background/50 focus:bg-background transition-colors"
                     />
                   </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
+                  
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">Member Since</Label>
+                    <Label htmlFor="email" className="text-sm text-muted-foreground">Email Address</Label>
                     <Input
-                      type="text"
-                      value={new Date(user?.created_at || "").toLocaleDateString()}
+                      id="email"
+                      type="email"
+                      value={email}
                       disabled
-                      className="bg-muted border-0 h-12 rounded-xl"
+                      className="h-11 rounded-xl bg-muted/50 border-0 text-muted-foreground"
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label className="text-muted-foreground">Status</Label>
-                    <div className="flex items-center gap-2 h-12 px-4 bg-green-500/10 rounded-xl">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                      <span className="text-green-600 font-medium">Active</span>
+                    <Label className="text-sm text-muted-foreground">Member Since</Label>
+                    <div className="flex items-center gap-2 h-11 px-4 bg-muted/50 rounded-xl text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>{new Date(user?.created_at || "").toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex gap-4 pt-4">
-                  <Button type="submit" disabled={loading} className="rounded-xl h-12 px-8">
-                    {loading ? "Updating..." : "Save Changes"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate("/orders")}
-                    className="rounded-xl h-12 px-8"
-                  >
-                    View Orders
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card className="bg-card shadow-sm border-0">
-            <CardHeader>
-              <CardTitle className="text-lg">Recent Orders</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {recentOrders.length > 0 ? (
-                recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
-                    <div>
-                      <p className="font-medium text-foreground">${Number(order.total_amount).toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      order.status === 'completed' 
-                        ? 'bg-green-500/10 text-green-600' 
-                        : order.status === 'pending'
-                        ? 'bg-yellow-500/10 text-yellow-600'
-                        : 'bg-primary/10 text-primary'
-                    }`}>
-                      {order.status}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Package className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No orders yet</p>
                   <Button 
-                    variant="link" 
-                    onClick={() => navigate("/shop")}
-                    className="text-primary"
+                    type="submit" 
+                    disabled={loading} 
+                    className="w-full sm:w-auto rounded-xl h-11 px-8 mt-2"
                   >
-                    Start Shopping
+                    {loading ? "Saving..." : "Save Changes"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </section>
+
+          {/* Recent Orders */}
+          <section className="lg:col-span-2">
+            <Card className="bg-card/50 backdrop-blur border-border/50 shadow-sm h-full">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-accent" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-foreground">Recent Orders</h2>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-primary hover:text-primary"
+                    onClick={() => navigate("/orders")}
+                  >
+                    View All
                   </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                <div className="space-y-3">
+                  {recentOrders.length > 0 ? (
+                    recentOrders.map((order) => (
+                      <div 
+                        key={order.id} 
+                        className="flex items-center justify-between p-4 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => navigate("/orders")}
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-foreground text-sm">
+                            #{order.id.slice(0, 8).toUpperCase()}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </span>
+                          <span className="font-semibold text-foreground">
+                            ${parseFloat(order.total_amount).toFixed(0)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8">
+                      <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-muted-foreground text-sm">No orders yet</p>
+                      <Button 
+                        variant="link" 
+                        className="text-primary mt-2" 
+                        onClick={() => navigate("/shop")}
+                      >
+                        Start Shopping
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
         </div>
       </main>
     </div>
