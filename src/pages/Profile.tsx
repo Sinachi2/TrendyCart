@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { 
   User, Home, LogOut, Moon, Sun, Heart,
-  ShoppingCart, Package, Settings, ChevronRight, Mail, Calendar
+  ShoppingCart, Package, Settings, ChevronRight, Mail, Calendar, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/trendycart-logo.png";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AddressBook } from "@/components/AddressBook";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -365,6 +366,13 @@ const Profile = () => {
             </Card>
           </section>
         </div>
+
+        {/* Address Book Section */}
+        {user && (
+          <section>
+            <AddressBook userId={user.id} />
+          </section>
+        )}
       </main>
     </div>
   );
