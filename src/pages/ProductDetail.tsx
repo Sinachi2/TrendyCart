@@ -1,7 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield, GitCompareArrows } from "lucide-react";
 import ProductReviews from "@/components/ProductReviews";
+import ProductImageGallery from "@/components/ProductImageGallery";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useProductCompare } from "@/contexts/ProductCompareContext";
 
 interface Product {
   id: string;
@@ -29,9 +31,38 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { addToCompare, removeFromCompare, isInCompare } = useProductCompare();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+
+  const handleToggleCompare = () => {
+    if (!product) return;
+    const compareProduct = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      original_price: product.original_price,
+      image_url: product.image_url,
+      category: product.category,
+      description: product.description,
+      stock_quantity: product.stock_quantity,
+    };
+
+    if (isInCompare(product.id)) {
+      removeFromCompare(product.id);
+      toast({
+        title: "Removed from compare",
+        description: `${product.name} removed from comparison`,
+      });
+    } else {
+      addToCompare(compareProduct);
+      toast({
+        title: "Added to compare",
+        description: `${product.name} added to comparison`,
+      });
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -161,17 +192,15 @@ const ProductDetail = () => {
         </Button>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Product Image */}
+          {/* Product Image Gallery */}
           <div className="relative">
-            <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-              <img
-                src={product.image_url || "/placeholder.svg"}
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <ProductImageGallery
+              mainImage={product.image_url}
+              productName={product.name}
+              additionalImages={[]}
+            />
             {product.is_new && (
-              <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground">
+              <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground z-10">
                 New Arrival
               </Badge>
             )}
@@ -284,6 +313,9 @@ const ProductDetail = () => {
                 >
                   <ShoppingCart className="h-5 w-5 mr-2" />
                   Add to Cart
+                </Button>
+                <Button variant="outline" size="lg" onClick={handleToggleCompare}>
+                  <GitCompareArrows className={`h-5 w-5 ${isInCompare(product.id) ? "text-primary" : ""}`} />
                 </Button>
                 <Button variant="outline" size="lg">
                   <Heart className="h-5 w-5" />
