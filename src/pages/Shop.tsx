@@ -4,6 +4,7 @@ import ProductCard from "@/components/ProductCard";
 import ProductQuickView from "@/components/ProductQuickView";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { Slider } from "@/components/ui/slider";
+import { Star } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -34,6 +35,8 @@ interface Product {
   is_new: boolean | null;
   stock_quantity: number | null;
   created_at: string | null;
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 const Shop = () => {
@@ -45,6 +48,7 @@ const Shop = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [maxPrice, setMaxPrice] = useState(1000);
+  const [minRating, setMinRating] = useState(0);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   useEffect(() => {
@@ -54,18 +58,40 @@ const Shop = () => {
   const loadProducts = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      const { data: productsData, error } = await supabase
         .from("products")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      const productsData = data || [];
-      setProducts(productsData);
+
+      // Fetch reviews for all products to calculate average ratings
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select("product_id, rating");
+
+      const reviewsByProduct = (reviewsData || []).reduce((acc, review) => {
+        if (!acc[review.product_id]) {
+          acc[review.product_id] = { total: 0, count: 0 };
+        }
+        acc[review.product_id].total += review.rating;
+        acc[review.product_id].count += 1;
+        return acc;
+      }, {} as Record<string, { total: number; count: number }>);
+
+      const productsWithRatings = (productsData || []).map((product) => ({
+        ...product,
+        averageRating: reviewsByProduct[product.id]
+          ? reviewsByProduct[product.id].total / reviewsByProduct[product.id].count
+          : 0,
+        reviewCount: reviewsByProduct[product.id]?.count || 0,
+      }));
+
+      setProducts(productsWithRatings);
       
       // Calculate max price
-      if (productsData.length > 0) {
-        const max = Math.ceil(Math.max(...productsData.map(p => p.price)));
+      if (productsWithRatings.length > 0) {
+        const max = Math.ceil(Math.max(...productsWithRatings.map(p => p.price)));
         setMaxPrice(max);
         setPriceRange([0, max]);
       }
@@ -81,7 +107,8 @@ const Shop = () => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
-    return matchesSearch && matchesCategory && matchesPrice;
+    const matchesRating = (product.averageRating || 0) >= minRating;
+    return matchesSearch && matchesCategory && matchesPrice && matchesRating;
   });
 
   // Sort products
@@ -95,6 +122,8 @@ const Shop = () => {
         return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
       case "popular":
         return (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0);
+      case "rating":
+        return (b.averageRating || 0) - (a.averageRating || 0);
       default:
         return 0;
     }
@@ -110,7 +139,7 @@ const Shop = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, sortBy, priceRange]);
+  }, [searchQuery, selectedCategory, sortBy, priceRange, minRating]);
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
 
@@ -162,8 +191,46 @@ const Shop = () => {
               <SelectItem value="price-low">Price: Low to High</SelectItem>
               <SelectItem value="price-high">Price: High to Low</SelectItem>
               <SelectItem value="popular">Popular</SelectItem>
+              <SelectItem value="rating">Highest Rated</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Rating Filter */}
+        <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium">Minimum Rating</span>
+            <span className="text-sm text-muted-foreground flex items-center gap-1">
+              {minRating > 0 ? (
+                <>
+                  {minRating}+ <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                </>
+              ) : (
+                "All ratings"
+              )}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            {[0, 1, 2, 3, 4].map((rating) => (
+              <button
+                key={rating}
+                onClick={() => setMinRating(rating)}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm transition-colors ${
+                  minRating === rating
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-background border border-border hover:bg-muted"
+                }`}
+              >
+                {rating === 0 ? (
+                  "All"
+                ) : (
+                  <>
+                    {rating}+ <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                  </>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Price Range Filter */}
