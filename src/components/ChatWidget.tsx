@@ -23,7 +23,7 @@ const botResponses: Record<string, string> = {
   "track my order": "To track your order, please go to your Dashboard → Orders, or provide your order ID and I'll look it up for you!",
   "return policy": "We offer a 30-day return policy for all unused items in original packaging. Simply go to your Orders page and select 'Request Return' on the item you'd like to return.",
   "shipping info": "We offer free shipping on orders over $50! Standard shipping takes 3-5 business days, and express shipping (2-day) is available for $9.99.",
-  "contact support": "You can reach our support team via email at support@trendycart.com or call us at 1-800-TRENDY. Our hours are Mon-Fri 9AM-6PM EST.",
+  "contact support": "You can reach our support team via email at trendycart96@gmail.com or call us at 1-800-TRENDY. Our hours are Mon-Fri 9AM-6PM EST.",
   default: "Thanks for your message! Our team typically responds within a few hours. Is there anything else I can help you with in the meantime?",
 };
 
