@@ -24,6 +24,7 @@ import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
 import Compare from "./pages/Compare";
 import DashboardCoupons from "./pages/DashboardCoupons";
+import DashboardSupport from "./pages/DashboardSupport";
 import SharedWishlist from "./pages/SharedWishlist";
 import NotFound from "./pages/NotFound";
 
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="/dashboard/products" element={<DashboardProducts />} />
               <Route path="/dashboard/orders" element={<DashboardOrders />} />
               <Route path="/dashboard/coupons" element={<DashboardCoupons />} />
+              <Route path="/dashboard/support" element={<DashboardSupport />} />
               <Route path="/auth" element={<Auth />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, ShoppingCart, Users, Settings, BarChart3, Tag } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, Settings, BarChart3, Tag, Headphones } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -19,6 +19,7 @@ const menuItems = [
   { title: "Products", url: "/dashboard/products", icon: Package },
   { title: "Orders", url: "/dashboard/orders", icon: ShoppingCart },
   { title: "Coupons", url: "/dashboard/coupons", icon: Tag },
+  { title: "Support", url: "/dashboard/support", icon: Headphones },
   { title: "Customers", url: "/dashboard/customers", icon: Users },
   { title: "Analytics", url: "/dashboard/analytics", icon: BarChart3 },
   { title: "Settings", url: "/dashboard/settings", icon: Settings },
