@@ -23,10 +23,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProductImageUpload } from "@/components/ProductImageUpload";
+
+interface ProductImage {
+  id?: string;
+  image_url: string;
+  display_order: number;
+}
 
 const DashboardProducts = () => {
   const navigate = useNavigate();
@@ -35,6 +42,7 @@ const DashboardProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -73,16 +81,21 @@ const DashboardProducts = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Use first image from gallery or fall back to URL input
+      const mainImageUrl = productImages.length > 0 ? productImages[0].image_url : formData.image_url;
+      
       const productData = {
         name: formData.name,
         description: formData.description,
         price: parseFloat(formData.price),
         original_price: formData.original_price ? parseFloat(formData.original_price) : null,
         category: formData.category,
-        image_url: formData.image_url,
+        image_url: mainImageUrl,
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         is_new: formData.is_new,
       };
+
+      let productId = editingProduct?.id;
 
       if (editingProduct) {
         const { error } = await supabase
@@ -91,12 +104,28 @@ const DashboardProducts = () => {
           .eq("id", editingProduct.id);
 
         if (error) throw error;
+        
+        // Delete existing images and insert new ones
+        await supabase.from("product_images").delete().eq("product_id", editingProduct.id);
+        
         toast({ title: "Success", description: "Product updated successfully" });
       } else {
-        const { error } = await supabase.from("products").insert(productData);
+        const { data, error } = await supabase.from("products").insert(productData).select().single();
 
         if (error) throw error;
+        productId = data.id;
         toast({ title: "Success", description: "Product created successfully" });
+      }
+
+      // Save product images
+      if (productImages.length > 0 && productId) {
+        const imageRecords = productImages.map((img, index) => ({
+          product_id: productId,
+          image_url: img.image_url,
+          display_order: index,
+        }));
+        
+        await supabase.from("product_images").insert(imageRecords);
       }
 
       setIsDialogOpen(false);
@@ -111,7 +140,7 @@ const DashboardProducts = () => {
     }
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = async (product: any) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -123,6 +152,15 @@ const DashboardProducts = () => {
       stock_quantity: product.stock_quantity.toString(),
       is_new: product.is_new,
     });
+    
+    // Load existing images
+    const { data: images } = await supabase
+      .from("product_images")
+      .select("*")
+      .eq("product_id", product.id)
+      .order("display_order");
+    
+    setProductImages(images || []);
     setIsDialogOpen(true);
   };
 
@@ -156,6 +194,7 @@ const DashboardProducts = () => {
       is_new: false,
     });
     setEditingProduct(null);
+    setProductImages([]);
   };
 
   if (loading || !user || !isAdmin) {
@@ -273,15 +312,12 @@ const DashboardProducts = () => {
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="image_url">Image URL</Label>
-                    <Input
-                      id="image_url"
-                      type="url"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                    />
-                  </div>
+                  {/* Product Images */}
+                  <ProductImageUpload
+                    productId={editingProduct?.id}
+                    images={productImages}
+                    onChange={setProductImages}
+                  />
 
                   <DialogFooter>
                     <Button type="submit">
