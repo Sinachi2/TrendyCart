@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, DollarSign, Users, Package } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import LowStockAlerts from "@/components/LowStockAlerts";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -142,6 +143,11 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            {/* Low Stock Alerts */}
+            <div className="mb-8">
+              <LowStockAlerts threshold={10} limit={5} />
             </div>
 
             {/* Recent Activity */}

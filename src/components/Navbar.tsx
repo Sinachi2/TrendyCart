@@ -74,11 +74,9 @@ const Navbar = () => {
             <Link to="/contact" className="text-foreground hover:text-primary transition-colors">
               Contact
             </Link>
-            {isAdmin && (
-              <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
-                Dashboard
-              </Link>
-            )}
+            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+              Dashboard
+            </Link>
           </div>
 
           {/* User Actions */}
@@ -168,15 +166,13 @@ const Navbar = () => {
             >
               Contact
             </Link>
-            {isAdmin && (
-              <Link
-                to="/dashboard"
-                className="block text-foreground hover:text-primary transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-            )}
+            <Link
+              to="/dashboard"
+              className="block text-foreground hover:text-primary transition-colors"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Dashboard
+            </Link>
             {!user && (
               <Link
                 to="/auth"
