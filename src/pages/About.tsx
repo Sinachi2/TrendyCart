@@ -5,17 +5,23 @@ const About = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4 py-12">
-        {/* Hero */}
-        <div className="max-w-3xl mx-auto text-center mb-16">
-          <h1 className="text-5xl font-bold mb-6">About ShopHub</h1>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            We're on a mission to make online shopping accessible, enjoyable, and rewarding for everyone. 
-            Since 2024, we've been delivering quality products and exceptional service to customers worldwide.
-          </p>
-        </div>
 
+      {/* Hero Section */}
+      <div className="bg-gradient-to-b from-primary/5 to-background">
+        <div className="container mx-auto px-4 py-20">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-5xl font-bold mb-6">About TrendyCart</h1>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              TrendyCart is a modern e-commerce platform built to make online
+              shopping fast, stylish, and reliable. We connect customers with
+              quality products while delivering a smooth and enjoyable shopping
+              experience.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12">
         {/* Values */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <div className="text-center p-6 rounded-lg border border-border hover:shadow-card transition-shadow">
@@ -24,7 +30,8 @@ const About = () => {
             </div>
             <h3 className="text-xl font-semibold mb-3">Our Mission</h3>
             <p className="text-muted-foreground">
-              To provide high-quality products at fair prices while delivering an exceptional shopping experience.
+              To make online shopping accessible, enjoyable, and rewarding by
+              offering quality products, fair pricing, and fast service.
             </p>
           </div>
 
@@ -34,7 +41,8 @@ const About = () => {
             </div>
             <h3 className="text-xl font-semibold mb-3">Our Team</h3>
             <p className="text-muted-foreground">
-              A passionate group of individuals dedicated to curating the best products for our customers.
+              A dedicated team of creatives, curators, and tech professionals
+              working together to deliver the best shopping experience.
             </p>
           </div>
 
@@ -44,7 +52,8 @@ const About = () => {
             </div>
             <h3 className="text-xl font-semibold mb-3">Our Promise</h3>
             <p className="text-muted-foreground">
-              Quality products, secure transactions, and customer satisfaction guaranteed with every purchase.
+              Secure payments, trusted products, and customer satisfaction —
+              every order, every time.
             </p>
           </div>
         </div>
@@ -55,22 +64,29 @@ const About = () => {
             <h2 className="text-3xl font-bold mb-6">Our Story</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                ShopHub was founded with a simple idea: shopping should be easy, enjoyable, and trustworthy. 
-                We started in a small office with big dreams and a commitment to changing the e-commerce landscape.
+                TrendyCart was founded with a simple vision: shopping should feel
+                effortless, modern, and trustworthy. What started as a small
+                idea quickly grew into a platform focused on convenience and
+                quality.
               </p>
+
               <p>
-                Today, we serve thousands of customers worldwide, offering carefully curated products across 
-                multiple categories. From the latest electronics to timeless fashion pieces, we ensure every 
-                item meets our strict quality standards.
+                Since 2024, we have served customers across different regions,
+                carefully curating products that meet our quality and style
+                standards — from everyday essentials to trending items.
               </p>
+
               <p>
-                What sets us apart is our dedication to customer service. We believe that buying online should 
-                be as personal as shopping in a physical store. That's why our team is always ready to help, 
-                answer questions, and ensure your complete satisfaction.
+                At TrendyCart, we believe shopping is more than just buying
+                products. It’s about trust, support, and a seamless experience.
+                That’s why our customer service team is always ready to assist
+                and ensure satisfaction.
               </p>
+
               <p>
-                As we continue to grow, our commitment remains the same: to provide you with the best products, 
-                competitive prices, and an shopping experience that keeps you coming back.
+                As we grow, our commitment remains the same: to deliver value,
+                innovation, and an enjoyable shopping journey that keeps you
+                coming back.
               </p>
             </div>
           </div>
