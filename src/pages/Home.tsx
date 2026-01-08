@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import DealsSection from "@/components/DealsSection";
+import ChatWidget from "@/components/ChatWidget";
 import heroBg from "@/assets/hero-bg.jpg";
 
 const Home = () => {
@@ -121,6 +122,8 @@ const Home = () => {
           </Button>
         </div>
       </section>
+
+      <ChatWidget />
     </div>
   );
 };

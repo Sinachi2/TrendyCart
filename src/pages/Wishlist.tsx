@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
+import WishlistShare from "@/components/WishlistShare";
 
 interface WishlistItem {
   id: string;
@@ -164,10 +165,13 @@ const Wishlist = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-8">
-          <Heart className="h-8 w-8 text-primary fill-primary" />
-          <h1 className="text-3xl font-bold">My Wishlist</h1>
-          <Badge variant="secondary">{wishlistItems.length} items</Badge>
+        <div className="flex items-center justify-between gap-3 mb-8 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Heart className="h-8 w-8 text-primary fill-primary" />
+            <h1 className="text-3xl font-bold">My Wishlist</h1>
+            <Badge variant="secondary">{wishlistItems.length} items</Badge>
+          </div>
+          <WishlistShare wishlistItemCount={wishlistItems.length} />
         </div>
 
         {wishlistItems.length === 0 ? (

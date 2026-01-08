@@ -24,6 +24,7 @@ import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
 import Compare from "./pages/Compare";
 import DashboardCoupons from "./pages/DashboardCoupons";
+import SharedWishlist from "./pages/SharedWishlist";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="/orders" element={<Orders />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/wishlist/shared/:userId" element={<SharedWishlist />} />
               <Route path="/user-dashboard" element={<UserDashboard />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
