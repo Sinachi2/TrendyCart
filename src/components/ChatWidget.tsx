@@ -48,7 +48,7 @@ const intents: Intent[] = [
   },
   {
     keywords: ["contact", "support", "help", "customer service", "speak to agent", "human", "real person"],
-    response: "You can reach our support team via email at trendycart96@gmail.com or call us at 1-800-TRENDY. Our hours are Mon-Fri 9AM-6PM EST. Would you like to connect with a live agent? 📞",
+    response: "You can reach our support team via email at trendycart96@gmail.com or call us at 1-800-TRENDY. Our hours are Sun-Sat: 9AM - 6PM. Would you like to connect with a live agent? 📞",
   },
   {
     keywords: ["product", "item", "buy", "purchase", "shop", "browse", "looking for"],
