@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import PasswordStrengthIndicator from "@/components/PasswordStrengthIndicator";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/trendycart-logo.png";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -102,10 +102,10 @@ const Auth = () => {
       <Card className="w-full max-w-md shadow-elegant">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={logo} alt="ShopHub" className="h-12 w-12" />
+            <img src={logo} alt="TrendyCart" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Welcome to ShopHub
+            Welcome to TrendyCart
           </CardTitle>
           <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>
