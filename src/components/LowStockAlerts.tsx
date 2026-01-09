@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Package, ExternalLink } from "lucide-react";
+import { AlertTriangle, Package, ExternalLink, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface LowStockProduct {
   id: string;
@@ -22,6 +23,8 @@ interface LowStockAlertsProps {
 const LowStockAlerts = ({ threshold = 10, limit = 5 }: LowStockAlertsProps) => {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sendingAlert, setSendingAlert] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadLowStockProducts();
@@ -42,6 +45,31 @@ const LowStockAlerts = ({ threshold = 10, limit = 5 }: LowStockAlertsProps) => {
       console.error("Error loading low stock products:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const sendEmailAlert = async () => {
+    setSendingAlert(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-notification", {
+        body: { type: "low_stock", threshold },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Alert Sent!",
+        description: data.message || "Low stock alert has been sent to admins.",
+      });
+    } catch (error) {
+      console.error("Error sending alert:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send low stock alert.",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingAlert(false);
     }
   };
 
@@ -94,7 +122,19 @@ const LowStockAlerts = ({ threshold = 10, limit = 5 }: LowStockAlertsProps) => {
             <AlertTriangle className="h-5 w-5 text-amber-500" />
             Low Stock Alerts
           </span>
-          <Badge variant="secondary">{lowStockProducts.length} items</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{lowStockProducts.length} items</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={sendEmailAlert}
+              disabled={sendingAlert}
+              className="text-xs"
+            >
+              <Mail className="h-3 w-3 mr-1" />
+              {sendingAlert ? "Sending..." : "Email Alert"}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>

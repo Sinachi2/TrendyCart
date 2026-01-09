@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ProductCompareProvider } from "@/contexts/ProductCompareContext";
 import ProductCompareBar from "@/components/ProductCompareBar";
+import ChatWidget from "@/components/ChatWidget";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import About from "./pages/About";
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ProductCompareBar />
+            <ChatWidget />
           </BrowserRouter>
         </ProductCompareProvider>
       </TooltipProvider>
