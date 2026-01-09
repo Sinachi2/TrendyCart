@@ -255,7 +255,7 @@ const UserDashboard = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
-                    onClick={() => navigate("/profile")}
+                    onClick={() => navigate("/Profile")}
                   >
                     <User className="h-5 w-5 mr-3 text-blue-500" />
                     Edit My Profile
@@ -264,7 +264,7 @@ const UserDashboard = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
-                    onClick={() => navigate("/orders")}
+                    onClick={() => navigate("/Orders")}
                   >
                     <Package className="h-5 w-5 mr-3 text-emerald-500" />
                     View All My Orders
