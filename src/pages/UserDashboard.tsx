@@ -4,15 +4,18 @@ import {
   User,
   Package,
   Heart,
-  Clock,
-  TrendingUp,
+  MapPin,
+  CreditCard,
   Settings,
   ChevronRight,
   ShoppingBag,
+  Clock,
+  TrendingUp,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +23,8 @@ import Navbar from "@/components/Navbar";
 import { AddressBook } from "@/components/AddressBook";
 import { PaymentMethods } from "@/components/PaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Profile } from "@/pages0/Profile";
+import { Orders } from "@/pages/Orders";
 
 interface DashboardStats {
   totalOrders: number;
@@ -62,24 +67,15 @@ const UserDashboard = () => {
     try {
       const [profileRes, ordersRes, wishlistRes] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", user.id).single(),
-        supabase
-          .from("orders")
-          .select("id, created_at, status, total_amount")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
+        supabase.from("orders").select("id, created_at, status, total_amount").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("wishlist").select("id").eq("user_id", user.id),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
 
       const orders = ordersRes.data || [];
-      const totalSpent = orders.reduce(
-        (sum, o) => sum + Number(o.total_amount),
-        0
-      );
-      const pendingOrders = orders.filter(
-        (o) => o.status === "pending" || o.status === "processing"
-      ).length;
+      const totalSpent = orders.reduce((sum, o) => sum + parseFloat(String(o.total_amount)), 0);
+      const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "processing").length;
 
       setStats({
         totalOrders: orders.length,
@@ -116,7 +112,14 @@ const UserDashboard = () => {
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="container mx-auto px-4 py-8">
-          <Skeleton className="h-32 w-full rounded-2xl" />
+          <div className="space-y-6">
+            <Skeleton className="h-32 w-full rounded-2xl" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-24 rounded-xl" />
+              ))}
+            </div>
+          </div>
         </main>
       </div>
     );
@@ -125,153 +128,171 @@ const UserDashboard = () => {
   if (!user) return null;
 
   const quickStats = [
-    { label: "Total Orders", value: stats.totalOrders, icon: Package },
-    { label: "Wishlist Items", value: stats.wishlistCount, icon: Heart },
-    {
-      label: "Total Spent",
-      value: `$${stats.totalSpent.toFixed(0)}`,
-      icon: TrendingUp,
-    },
-    { label: "In Progress", value: stats.pendingOrders, icon: Clock },
+    { label: "Total Orders", value: stats.totalOrders, icon: Package, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-500/10" },
+    { label: "Wishlist Items", value: stats.wishlistCount, icon: Heart, color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-500/10" },
+    { label: "Total Spent", value: `$${stats.totalSpent.toFixed(0)}`, icon: TrendingUp, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
+    { label: "In Progress", value: stats.pendingOrders, icon: Clock, color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-500/10" },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
       <Navbar />
 
       <main className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Welcome */}
-        <Card className="mb-8">
-          <CardContent className="p-6 flex items-center gap-4">
-            <User className="h-10 w-10 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">
-                Welcome back{profile?.full_name && `, ${profile.full_name}`}!
-              </h1>
-              <p className="text-muted-foreground">
-                Manage your account & orders
-              </p>
+        {/* Welcome Banner */}
+        <Card className="mb-8 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border-primary/20 overflow-hidden relative">
+          <CardContent className="p-6 md:p-8">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+                <User className="h-8 w-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}!
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Here's what's happening with your account
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Stats */}
+        {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {quickStats.map((s) => (
-            <Card key={s.label}>
-              <CardContent className="p-4 flex items-center gap-3">
-                <s.icon className="h-6 w-6 text-primary" />
-                <div>
-                  <p className="text-xl font-bold">{s.value}</p>
-                  <p className="text-xs text-muted-foreground">{s.label}</p>
+          {quickStats.map((stat) => (
+            <Card key={stat.label} className="bg-card/50 backdrop-blur border-border/50 hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-xl ${stat.bg} flex items-center justify-center`}>
+                    <stat.icon className={`h-5 w-5 ${stat.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="addresses">Addresses</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-muted/50 p-1 rounded-xl">
+            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="addresses" className="rounded-lg data-[state=active]:bg-background">
+              Addresses
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-background">
+              Payments
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="grid md:grid-cols-2 gap-6">
-            {/* Recent Orders */}
-            <Card>
-              <CardHeader className="flex justify-between flex-row">
-                <CardTitle>Recent Orders</CardTitle>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/orders">
-                    View All <ChevronRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
-              </CardHeader>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Recent Orders */}
+              <Card className="bg-card/50 backdrop-blur border-border/50">
+                <CardHeader className="flex flex-row items-center justify-between pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    Recent Orders
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" className="rounded-xl" onClick={() => navigate("/orders")}>
+                    View All
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {recentOrders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <ShoppingBag className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-muted-foreground mb-4">No orders yet</p>
+                      <Button variant="outline" className="rounded-xl" onClick={() => navigate("/shop")}>
+                        Start Shopping
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentOrders.map((order) => (
+                        <Link
+                          key={order.id}
+                          to={`/order-confirmation/${order.id}`}
+                          className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                        >
+                          <div>
+                            <p className="font-medium text-sm text-foreground">
+                              Order #{order.id.slice(0, 8).toUpperCase()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(order.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div className="text-right flex items-center gap-3">
+                            <Badge className={`${getStatusColor(order.status)} text-xs`}>
+                              {order.status}
+                            </Badge>
+                            <span className="font-semibold text-sm">
+                              ${parseFloat(String(order.total_amount)).toFixed(2)}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-              <CardContent className="space-y-3">
-                {recentOrders.map((order) => (
-                  <Link
-                    key={order.id}
-                    to={`/order-confirmation/${order.id}`}
-                    className="flex justify-between p-3 rounded-lg bg-muted/30"
+              {/* Quick Actions */}
+              <Card className="bg-card/50 backdrop-blur border-border/50">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
+                    onClick={() => navigate("/profile")}
                   >
-                    <div>
-                      <p className="font-medium">
-                        Order #{order.id.slice(0, 8).toUpperCase()}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge className={getStatusColor(order.status)}>
-                        {order.status}
-                      </Badge>
-                      <p className="font-semibold">
-                        ${Number(order.total_amount).toFixed(2)}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-
-              <CardContent className="space-y-2">
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start rounded-xl h-12"
-                >
-                  <Link to="/profile" className="flex items-center w-full">
                     <User className="h-5 w-5 mr-3 text-blue-500" />
                     Edit My Profile
-                    <ChevronRight className="h-4 w-4 ml-auto" />
-                  </Link>
-                </Button>
-
-                <Button
-                  asChild
-                  variant="ghost"
-                  className="w-full justify-start rounded-xl h-12"
-                >
-                  <Link to="/orders" className="flex items-center w-full">
+                    <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
+                    onClick={() => navigate("/orders")}
+                  >
                     <Package className="h-5 w-5 mr-3 text-emerald-500" />
                     View All My Orders
-                    <ChevronRight className="h-4 w-4 ml-auto" />
-                  </Link>
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start rounded-xl h-12"
-                  onClick={() => navigate("/wishlist")}
-                >
-                  <Heart className="h-5 w-5 mr-3 text-rose-500" />
-                  My Wishlist
-                  <ChevronRight className="h-4 w-4 ml-auto" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start rounded-xl h-12"
-                  onClick={() => navigate("/shop")}
-                >
-                  <ShoppingBag className="h-5 w-5 mr-3 text-violet-500" />
-                  Continue Shopping
-                  <ChevronRight className="h-4 w-4 ml-auto" />
-                </Button>
-              </CardContent>
-            </Card>
+                    <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
+                    onClick={() => navigate("/wishlist")}
+                  >
+                    <Heart className="h-5 w-5 mr-3 text-rose-500" />
+                    My Wishlist
+                    <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
+                    onClick={() => navigate("/shop")}
+                  >
+                    <ShoppingBag className="h-5 w-5 mr-3 text-violet-500" />
+                    Continue Shopping
+                    <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="addresses">
