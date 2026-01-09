@@ -23,6 +23,8 @@ import Navbar from "@/components/Navbar";
 import { AddressBook } from "@/components/AddressBook";
 import { PaymentMethods } from "@/components/PaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Profile } from "@/pages0/Profile";
+import { Orders } from "@/pages/Orders";
 
 interface DashboardStats {
   totalOrders: number;
@@ -255,7 +257,7 @@ const UserDashboard = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
-                    onClick={() => navigate("/Profile")}
+                    onClick={() => navigate("/profile")}
                   >
                     <User className="h-5 w-5 mr-3 text-blue-500" />
                     Edit My Profile
@@ -264,7 +266,7 @@ const UserDashboard = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
-                    onClick={() => navigate("/Orders")}
+                    onClick={() => navigate("/orders")}
                   >
                     <Package className="h-5 w-5 mr-3 text-emerald-500" />
                     View All My Orders
