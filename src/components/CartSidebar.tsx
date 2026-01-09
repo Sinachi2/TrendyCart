@@ -119,7 +119,7 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
   };
 
   const handleCheckout = () => {
-    onOpenChange(false);
+    onOpenChange(true);
     navigate("/checkout");
   };
 
