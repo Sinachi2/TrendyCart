@@ -74,7 +74,7 @@ const Navbar = () => {
             <Link to="/contact" className="text-foreground hover:text-primary transition-colors">
               Contact
             </Link>
-            <Link to="/dashboard" className="text-foreground hover:text-primary transition-colors">
+            <Link to="/user-dashboard" className="text-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>
           </div>
