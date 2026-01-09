@@ -82,8 +82,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Email Us</h3>
-                    <p className="text-muted-foreground">support@shophub.com</p>
-                    <p className="text-muted-foreground">sales@shophub.com</p>
+                    <p className="text-muted-foreground">trendycart96@gmail.com</p>
+                    <p className="text-muted-foreground">ezeonyekasinachifranklin@gmail.com</p>                    
+                    <p className="text-muted-foreground">ezeonyekasinachi@gmail.com</p>
                   </div>
                 </div>
               </div>
@@ -95,9 +96,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Call Us</h3>
-                    <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                    <p className="text-muted-foreground">+234 (806) 333-2087</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Mon-Fri: 9AM - 6PM EST
+                      Sun-Sat: 9AM - 6PM
                     </p>
                   </div>
                 </div>
@@ -111,9 +112,9 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold text-lg mb-2">Visit Us</h3>
                     <p className="text-muted-foreground">
-                      123 Commerce Street<br />
-                      New York, NY 10001<br />
-                      United States
+                      78 Fadahunsi Street<br />
+                      Surulere Lagos, 101241<br />
+                      Nigeria
                     </p>
                   </div>
                 </div>
