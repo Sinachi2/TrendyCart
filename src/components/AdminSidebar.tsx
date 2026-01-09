@@ -12,7 +12,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/trendycart-logo.png";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -31,10 +31,10 @@ export function AdminSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="flex items-center gap-2 px-4 py-4 border-b border-sidebar-border">
-          <img src={logo} alt="ShopHub" className="h-8 w-8" />
+          <img src={logo} alt="TrendyCart" className="h-8 w-auto" />
           {open && (
             <span className="text-lg font-bold text-sidebar-foreground">
-              ShopHub Admin
+              TrendyCart Admin
             </span>
           )}
         </div>
