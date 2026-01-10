@@ -23,8 +23,6 @@ import Navbar from "@/components/Navbar";
 import { AddressBook } from "@/components/AddressBook";
 import { PaymentMethods } from "@/components/PaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Profile } from "@/pages0/Profile";
-import { Orders } from "@/pages/Orders";
 
 interface DashboardStats {
   totalOrders: number;
