@@ -23,10 +23,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ProductImageUpload } from "@/components/ProductImageUpload";
+
+interface ProductImage {
+  id?: string;
+  image_url: string;
+  display_order: number;
+  isNew?: boolean;
+}
 
 const DashboardProducts = () => {
   const navigate = useNavigate();
@@ -35,6 +43,7 @@ const DashboardProducts = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -60,7 +69,10 @@ const DashboardProducts = () => {
     try {
       const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select(`
+          *,
+          product_images (id, image_url, display_order)
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -79,10 +91,12 @@ const DashboardProducts = () => {
         price: parseFloat(formData.price),
         original_price: formData.original_price ? parseFloat(formData.original_price) : null,
         category: formData.category,
-        image_url: formData.image_url,
+        image_url: productImages.length > 0 ? productImages[0].image_url : formData.image_url,
         stock_quantity: parseInt(formData.stock_quantity) || 0,
         is_new: formData.is_new,
       };
+
+      let productId = editingProduct?.id;
 
       if (editingProduct) {
         const { error } = await supabase
@@ -91,13 +105,47 @@ const DashboardProducts = () => {
           .eq("id", editingProduct.id);
 
         if (error) throw error;
-        toast({ title: "Success", description: "Product updated successfully" });
       } else {
-        const { error } = await supabase.from("products").insert(productData);
+        const { data, error } = await supabase
+          .from("products")
+          .insert(productData)
+          .select()
+          .single();
 
         if (error) throw error;
-        toast({ title: "Success", description: "Product created successfully" });
+        productId = data.id;
       }
+
+      // Handle product images
+      if (productId) {
+        // Delete existing images if editing
+        if (editingProduct) {
+          await supabase
+            .from("product_images")
+            .delete()
+            .eq("product_id", editingProduct.id);
+        }
+
+        // Insert new images
+        if (productImages.length > 0) {
+          const imagesToInsert = productImages.map((img, index) => ({
+            product_id: productId,
+            image_url: img.image_url,
+            display_order: index,
+          }));
+
+          const { error: imgError } = await supabase
+            .from("product_images")
+            .insert(imagesToInsert);
+
+          if (imgError) throw imgError;
+        }
+      }
+
+      toast({ 
+        title: "Success", 
+        description: editingProduct ? "Product updated successfully" : "Product created successfully" 
+      });
 
       setIsDialogOpen(false);
       resetForm();
@@ -123,6 +171,15 @@ const DashboardProducts = () => {
       stock_quantity: product.stock_quantity.toString(),
       is_new: product.is_new,
     });
+    // Load existing product images
+    const existingImages = (product.product_images || [])
+      .sort((a: any, b: any) => a.display_order - b.display_order)
+      .map((img: any) => ({
+        id: img.id,
+        image_url: img.image_url,
+        display_order: img.display_order,
+      }));
+    setProductImages(existingImages);
     setIsDialogOpen(true);
   };
 
@@ -156,6 +213,7 @@ const DashboardProducts = () => {
       is_new: false,
     });
     setEditingProduct(null);
+    setProductImages([]);
   };
 
   if (loading || !user || !isAdmin) {
@@ -273,13 +331,32 @@ const DashboardProducts = () => {
                     </div>
                   </div>
 
+                  {/* Product Images Upload */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4" />
+                      Product Images
+                    </Label>
+                    <ProductImageUpload
+                      productId={editingProduct?.id}
+                      images={productImages}
+                      onImagesChange={setProductImages}
+                      maxImages={5}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      First image will be used as the primary product image
+                    </p>
+                  </div>
+
+                  {/* Fallback Image URL */}
                   <div>
-                    <Label htmlFor="image_url">Image URL</Label>
+                    <Label htmlFor="image_url">Or enter Image URL manually</Label>
                     <Input
                       id="image_url"
                       type="url"
                       value={formData.image_url}
                       onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      placeholder="https://example.com/image.jpg"
                     />
                   </div>
 
@@ -298,10 +375,12 @@ const DashboardProducts = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-16">Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Price</TableHead>
                     <TableHead>Stock</TableHead>
+                    <TableHead>Images</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -309,10 +388,28 @@ const DashboardProducts = () => {
                 <TableBody>
                   {products.map((product) => (
                     <TableRow key={product.id}>
+                      <TableCell>
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={product.name}
+                            className="h-10 w-10 rounded-md object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-medium">{product.name}</TableCell>
                       <TableCell>{product.category}</TableCell>
                       <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
                       <TableCell>{product.stock_quantity}</TableCell>
+                      <TableCell>
+                        <span className="text-xs bg-muted px-2 py-1 rounded">
+                          {product.product_images?.length || 0} images
+                        </span>
+                      </TableCell>
                       <TableCell>
                         {product.is_new && (
                           <span className="text-xs bg-accent text-accent-foreground px-2 py-1 rounded">
