@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProductCard from "@/components/ProductCard";
 import ProductQuickView from "@/components/ProductQuickView";
+import ProductHoverCard from "@/components/ProductHoverCard";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { Slider } from "@/components/ui/slider";
 import { Star } from "lucide-react";
@@ -265,18 +266,33 @@ const Shop = () => {
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {paginatedProducts.map((product) => (
-                <ProductCard
+                <ProductHoverCard
                   key={product.id}
-                  id={product.id}
                   name={product.name}
                   price={product.price}
                   originalPrice={product.original_price}
-                  image={product.image_url}
+                  description={product.description}
                   category={product.category}
-                  isNew={product.is_new}
                   stockQuantity={product.stock_quantity}
-                  onQuickView={() => setQuickViewProduct(product)}
-                />
+                  averageRating={product.averageRating}
+                  reviewCount={product.reviewCount}
+                  image={product.image_url}
+                >
+                  <div>
+                    <ProductCard
+                      id={product.id}
+                      name={product.name}
+                      price={product.price}
+                      originalPrice={product.original_price}
+                      image={product.image_url}
+                      category={product.category}
+                      isNew={product.is_new}
+                      stockQuantity={product.stock_quantity}
+                      description={product.description}
+                      onQuickView={() => setQuickViewProduct(product)}
+                    />
+                  </div>
+                </ProductHoverCard>
               ))}
             </div>
 

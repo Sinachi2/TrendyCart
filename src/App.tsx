@@ -28,6 +28,7 @@ import DashboardCoupons from "./pages/DashboardCoupons";
 import SharedWishlist from "./pages/SharedWishlist";
 import EditProfile from "./pages/EditProfile";
 import ViewOrders from "./pages/ViewOrders";
+import DashboardCustomers from "./pages/DashboardCustomers";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -59,6 +60,7 @@ const App = () => (
               <Route path="/dashboard/products" element={<DashboardProducts />} />
               <Route path="/dashboard/orders" element={<DashboardOrders />} />
               <Route path="/dashboard/coupons" element={<DashboardCoupons />} />
+              <Route path="/dashboard/customers" element={<DashboardCustomers />} />
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/view-orders" element={<ViewOrders />} />
               <Route path="/auth" element={<Auth />} />
