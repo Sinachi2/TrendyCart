@@ -11,18 +11,28 @@ import {
   ShoppingBag,
   Clock,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import { AddressBook } from "@/components/AddressBook";
 import { PaymentMethods } from "@/components/PaymentMethods";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditProfilePanel } from "@/components/EditProfilePanel";
+import { ViewOrdersPanel } from "@/components/ViewOrdersPanel";
 
 interface DashboardStats {
   totalOrders: number;
@@ -50,6 +60,8 @@ const UserDashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileSheetOpen, setProfileSheetOpen] = useState(false);
+  const [ordersSheetOpen, setOrdersSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -255,7 +267,7 @@ const UserDashboard = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
-                    onClick={() => navigate("/edit-profile")}
+                    onClick={() => setProfileSheetOpen(true)}
                   >
                     <User className="h-5 w-5 mr-3 text-blue-500" />
                     Edit My Profile
@@ -264,7 +276,7 @@ const UserDashboard = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start rounded-xl h-12 hover:bg-muted/50"
-                    onClick={() => navigate("/view-orders")}
+                    onClick={() => setOrdersSheetOpen(true)}
                   >
                     <Package className="h-5 w-5 mr-3 text-emerald-500" />
                     View All My Orders
@@ -301,6 +313,32 @@ const UserDashboard = () => {
             <PaymentMethods userId={user.id} />
           </TabsContent>
         </Tabs>
+
+        {/* Edit Profile Sheet */}
+        <Sheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen}>
+          <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+            <SheetHeader className="flex flex-row items-center justify-between border-b border-border/50 pb-4">
+              <SheetTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-primary" />
+                Edit Profile
+              </SheetTitle>
+            </SheetHeader>
+            <EditProfilePanel userId={user.id} userCreatedAt={user.created_at} />
+          </SheetContent>
+        </Sheet>
+
+        {/* View Orders Sheet */}
+        <Sheet open={ordersSheetOpen} onOpenChange={setOrdersSheetOpen}>
+          <SheetContent className="w-full sm:max-w-lg p-0 flex flex-col">
+            <SheetHeader className="flex flex-row items-center justify-between border-b border-border/50 p-4">
+              <SheetTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                My Orders
+              </SheetTitle>
+            </SheetHeader>
+            <ViewOrdersPanel userId={user.id} />
+          </SheetContent>
+        </Sheet>
       </main>
     </div>
   );
