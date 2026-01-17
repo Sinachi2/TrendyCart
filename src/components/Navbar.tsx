@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/trendycart-logo.png";
@@ -19,22 +20,47 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
       loadCartCount();
+      loadProfile();
       
-      // Listen for cart updates
       const handleCartUpdate = () => loadCartCount();
-      window.addEventListener("cartUpdated", handleCartUpdate);
+      const handleAvatarUpdate = (e: CustomEvent) => setAvatarUrl(e.detail.avatarUrl);
       
-      return () => window.removeEventListener("cartUpdated", handleCartUpdate);
+      window.addEventListener("cartUpdated", handleCartUpdate);
+      window.addEventListener("avatarUpdated", handleAvatarUpdate as EventListener);
+      
+      return () => {
+        window.removeEventListener("cartUpdated", handleCartUpdate);
+        window.removeEventListener("avatarUpdated", handleAvatarUpdate as EventListener);
+      };
     } else {
       setCartCount(0);
+      setAvatarUrl(null);
     }
   }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url, full_name")
+        .eq("id", user?.id)
+        .maybeSingle();
+      if (data) {
+        setAvatarUrl(data.avatar_url);
+        setFullName(data.full_name || "");
+      }
+    } catch (error) {
+      console.error("Error loading profile:", error);
+    }
+  };
 
   const loadCartCount = async () => {
     try {
@@ -49,6 +75,10 @@ const Navbar = () => {
     } catch (error) {
       console.error("Error loading cart count:", error);
     }
+  };
+
+  const getInitials = (name: string) => {
+    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U";
   };
 
   return (
@@ -93,8 +123,13 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <User className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8">
+                      {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
+                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                        {getInitials(fullName)}
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

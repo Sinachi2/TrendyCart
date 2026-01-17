@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, CreditCard, MapPin, Check } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, Check, Copy, Upload, Building2, Bitcoin, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,20 @@ import CouponInput from "@/components/CouponInput";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
+const PAYMENT_DETAILS = {
+  bank: {
+    name: "Fidelity Bank",
+    accountName: "SINACHI FRANKLIN EZEONYEKA",
+    accountNumber: "6152779644",
+  },
+  crypto: {
+    network: "USDT (TRC20)",
+    walletAddress: "0x689dc021f5b7ed12883a401addc45fff7f279c19",
+  },
+};
 interface Coupon {
   id: string;
   code: string;
@@ -58,6 +71,227 @@ interface SavedAddress {
   country: string;
   is_default: boolean;
 }
+
+// Payment Methods Section Component
+const PaymentMethodsSection = ({ toast }: { toast: any }) => {
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"bank" | "crypto">("bank");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      toast({
+        title: "Copied!",
+        description: `${field} copied to clipboard`,
+      });
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy manually",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload a file smaller than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      setProofFile(file);
+    }
+  };
+
+  const handleConfirmPayment = () => {
+    if (!proofFile) {
+      toast({
+        title: "Proof required",
+        description: "Please upload your payment proof (receipt or transaction hash)",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPaymentConfirmed(true);
+    toast({
+      title: "Payment confirmation received!",
+      description: "Your payment is being verified. You'll be notified once confirmed.",
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <CreditCard className="h-5 w-5 mr-2" />
+          Payment Method
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Payments are manually verified. Please upload proof of payment after completing your transfer.
+          </AlertDescription>
+        </Alert>
+
+        <Tabs value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as "bank" | "crypto")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="bank" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Bank Transfer
+            </TabsTrigger>
+            <TabsTrigger value="crypto" className="flex items-center gap-2">
+              <Bitcoin className="h-4 w-4" />
+              Cryptocurrency
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="bank" className="space-y-4 mt-4">
+            <div className="bg-muted/50 p-4 rounded-xl space-y-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                Bank Transfer Details
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between p-2 bg-background rounded-lg">
+                  <span className="text-muted-foreground">Bank Name:</span>
+                  <span className="font-medium">{PAYMENT_DETAILS.bank.name}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-background rounded-lg">
+                  <span className="text-muted-foreground">Account Name:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-xs">{PAYMENT_DETAILS.bank.accountName}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      type="button"
+                      onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountName, "Account Name")}
+                    >
+                      {copiedField === "Account Name" ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-background rounded-lg">
+                  <span className="text-muted-foreground">Account Number:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-primary">{PAYMENT_DETAILS.bank.accountNumber}</span>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      type="button"
+                      onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountNumber, "Account Number")}
+                    >
+                      {copiedField === "Account Number" ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="crypto" className="space-y-4 mt-4">
+            <div className="bg-muted/50 p-4 rounded-xl space-y-3">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <Bitcoin className="h-4 w-4 text-primary" />
+                Cryptocurrency Details
+              </h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between p-2 bg-background rounded-lg">
+                  <span className="text-muted-foreground">Network:</span>
+                  <span className="font-medium">{PAYMENT_DETAILS.crypto.network}</span>
+                </div>
+                <div className="p-2 bg-background rounded-lg space-y-2">
+                  <span className="text-muted-foreground text-xs">Wallet Address:</span>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-muted p-2 rounded break-all font-mono">
+                      {PAYMENT_DETAILS.crypto.walletAddress}
+                    </code>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      className="h-8 w-8 shrink-0"
+                      type="button"
+                      onClick={() => copyToClipboard(PAYMENT_DETAILS.crypto.walletAddress, "Wallet Address")}
+                    >
+                      {copiedField === "Wallet Address" ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <Separator />
+
+        {/* Payment Proof Upload */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Upload Payment Proof</Label>
+          <p className="text-xs text-muted-foreground">
+            Upload your receipt or transaction hash screenshot
+          </p>
+          <div className="flex items-center gap-3">
+            <Input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleFileChange}
+              className="flex-1"
+            />
+          </div>
+          {proofFile && (
+            <p className="text-xs text-green-600 flex items-center gap-1">
+              <Check className="h-3 w-3" />
+              File selected: {proofFile.name}
+            </p>
+          )}
+        </div>
+
+        {paymentConfirmed ? (
+          <Alert className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+            <Check className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-700 dark:text-green-300">
+              Your payment is being verified. You'll be notified once confirmed.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleConfirmPayment}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Confirm Payment
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -456,20 +690,7 @@ const Checkout = () => {
                 </Card>
               )}
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2" />
-                    Payment Method
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">
-                    Payment will be processed securely. This is a demo - no
-                    actual payment required.
-                  </p>
-                </CardContent>
-              </Card>
+              <PaymentMethodsSection toast={toast} />
             </div>
 
             {/* Order Summary */}
