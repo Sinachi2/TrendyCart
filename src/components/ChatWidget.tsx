@@ -356,7 +356,7 @@ const ChatWidget = () => {
             </div>
             <div>
               <h3 className="font-semibold">TrendyBot AI</h3>
-              <p className="text-xs text-white/80">Powered by AI • Always here to help</p>
+              <p className="text-xs text-white/80">Powered by SinaFast • Always here to help</p>
             </div>
             <div className="ml-auto flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
