@@ -324,6 +324,62 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_proofs: {
+        Row: {
+          admin_notes: string | null
+          amount: number | null
+          created_at: string
+          id: string
+          order_id: string | null
+          payment_method: string
+          proof_url: string
+          status: string
+          transaction_reference: string | null
+          updated_at: string
+          user_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          amount?: number | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          payment_method: string
+          proof_url: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+          user_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          amount?: number | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          payment_method?: string
+          proof_url?: string
+          status?: string
+          transaction_reference?: string | null
+          updated_at?: string
+          user_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_proofs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_images: {
         Row: {
           created_at: string

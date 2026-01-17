@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "order_status" | "price_drop" | "low_stock";
+  type: "order_status" | "price_drop" | "low_stock" | "payment_verified" | "payment_submitted";
   email?: string;
   threshold?: number;
   data?: {
@@ -21,6 +21,9 @@ interface NotificationRequest {
     oldPrice?: number;
     newPrice?: number;
     customerName?: string;
+    status?: string;
+    paymentMethod?: string;
+    amount?: number;
   };
 }
 
@@ -165,7 +168,60 @@ const handler = async (req: Request): Promise<Response> => {
     let subject = "";
     let html = "";
 
-    if (type === "order_status" && email) {
+    if (type === "payment_verified" && email) {
+      subject = `✅ Payment Verified - Your order is being processed!`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #333; margin: 0;">TrendyCart</h1>
+            <p style="color: #666; margin: 5px 0;">Payment Confirmation</p>
+          </div>
+          
+          <div style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center;">
+            <p style="margin: 0; font-size: 48px;">✅</p>
+            <p style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: white;">Payment Verified!</p>
+          </div>
+          
+          <p style="color: #333;">Hello${data?.customerName ? ` ${data.customerName}` : ''},</p>
+          <p style="color: #333;">Great news! Your payment for order <strong>#${data?.orderId?.slice(0, 8).toUpperCase()}</strong> has been verified.</p>
+          <p style="color: #333;">We're now processing your order and will notify you when it ships.</p>
+          
+          <p style="color: #333;">Thank you for shopping with TrendyCart!</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+          <p style="color: #999; font-size: 12px; text-align: center;">
+            This is an automated email from TrendyCart.
+          </p>
+        </div>
+      `;
+    } else if (type === "payment_submitted" && email) {
+      subject = `📝 Payment Proof Received - We're reviewing your payment`;
+      html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #333; margin: 0;">TrendyCart</h1>
+            <p style="color: #666; margin: 5px 0;">Payment Confirmation</p>
+          </div>
+          
+          <p style="color: #333;">Hello${data?.customerName ? ` ${data.customerName}` : ''},</p>
+          <p style="color: #333;">We've received your payment proof for order <strong>#${data?.orderId?.slice(0, 8).toUpperCase()}</strong>.</p>
+          
+          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0; color: #333;"><strong>Payment Method:</strong> ${data?.paymentMethod || 'N/A'}</p>
+            <p style="margin: 10px 0 0 0; color: #333;"><strong>Amount:</strong> $${data?.amount?.toFixed(2) || 'N/A'}</p>
+          </div>
+          
+          <p style="color: #333;">Our team is reviewing your payment and you'll receive a confirmation email once verified (usually within 24 hours).</p>
+          
+          <p style="color: #333;">Thank you for shopping with TrendyCart!</p>
+          
+          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+          <p style="color: #999; font-size: 12px; text-align: center;">
+            This is an automated email from TrendyCart.
+          </p>
+        </div>
+      `;
+    } else if (type === "order_status" && email) {
       const statusEmoji = {
         pending: "⏳",
         processing: "🔄",
@@ -193,21 +249,11 @@ const handler = async (req: Request): Promise<Response> => {
             </p>
           </div>
           
-          <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: #333;">What's next?</h3>
-            ${data?.orderStatus === 'shipped' ? '<p style="color: #666; margin: 0;">Your package is on its way! You\'ll receive tracking information soon.</p>' : ''}
-            ${data?.orderStatus === 'delivered' ? '<p style="color: #666; margin: 0;">Your package has been delivered. Enjoy your purchase!</p>' : ''}
-            ${data?.orderStatus === 'processing' ? '<p style="color: #666; margin: 0;">We\'re preparing your order for shipment.</p>' : ''}
-            ${data?.orderStatus === 'completed' ? '<p style="color: #666; margin: 0;">Thank you for shopping with us! We hope you love your purchase.</p>' : ''}
-            ${data?.orderStatus === 'cancelled' ? '<p style="color: #666; margin: 0;">Your order has been cancelled. If you have questions, please contact support.</p>' : ''}
-            ${data?.orderStatus === 'pending' ? '<p style="color: #666; margin: 0;">Your order is being reviewed and will be processed shortly.</p>' : ''}
-          </div>
-          
           <p style="color: #333;">Thank you for shopping with TrendyCart!</p>
           
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
           <p style="color: #999; font-size: 12px; text-align: center;">
-            This is an automated email from TrendyCart. Please do not reply to this email.
+            This is an automated email from TrendyCart.
           </p>
         </div>
       `;
@@ -216,29 +262,16 @@ const handler = async (req: Request): Promise<Response> => {
       subject = `🎉 Price Drop Alert - ${data?.productName} is now on sale!`;
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="text-align: center; margin-bottom: 30px;">
-            <h1 style="color: #333; margin: 0;">TrendyCart</h1>
-            <p style="color: #666; margin: 5px 0;">Price Drop Alert!</p>
-          </div>
-          
           <h1 style="color: #333; text-align: center;">🎉 Great news!</h1>
           <p style="color: #333; text-align: center;">An item on your wishlist just got cheaper!</p>
-          
           <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center;">
             <h2 style="margin: 0 0 15px 0; color: #333;">${data?.productName}</h2>
             <p style="margin: 0;">
-              <span style="text-decoration: line-through; color: #999; font-size: 18px;">$${data?.oldPrice}</span>
+              <span style="text-decoration: line-through; color: #999;">$${data?.oldPrice}</span>
               <span style="color: #e53935; font-size: 32px; font-weight: bold; margin-left: 15px;">$${data?.newPrice}</span>
             </p>
-            <p style="color: #4CAF50; margin: 15px 0 0 0; font-size: 18px; font-weight: bold;">You save: $${savings}!</p>
+            <p style="color: #4CAF50; margin: 15px 0 0 0; font-weight: bold;">You save: $${savings}!</p>
           </div>
-          
-          <p style="color: #333; text-align: center;">Don't miss out - grab it before it's gone!</p>
-          
-          <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-          <p style="color: #999; font-size: 12px; text-align: center;">
-            You received this email because this item is on your TrendyCart wishlist.
-          </p>
         </div>
       `;
     } else {
