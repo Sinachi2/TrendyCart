@@ -33,7 +33,7 @@ const Contact = () => {
             {/* Contact Form */}
             <div className="bg-card border border-border rounded-lg p-8">
               <h2 className="text-2xl font-bold mb-6">Send us a message</h2>
-              <form onSubmit={https://formspree.io/f/xkoooqaj} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium mb-2">
                     Name
