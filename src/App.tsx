@@ -30,6 +30,7 @@ import EditProfile from "./pages/EditProfile";
 import ViewOrders from "./pages/ViewOrders";
 import DashboardCustomers from "./pages/DashboardCustomers";
 import DashboardAnalytics from "./pages/DashboardAnalytics";
+import DashboardPayments from "./pages/DashboardPayments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/dashboard/products" element={<DashboardProducts />} />
               <Route path="/dashboard/orders" element={<DashboardOrders />} />
+              <Route path="/dashboard/payments" element={<DashboardPayments />} />
               <Route path="/dashboard/coupons" element={<DashboardCoupons />} />
               <Route path="/dashboard/customers" element={<DashboardCustomers />} />
               <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
