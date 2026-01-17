@@ -1,17 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  MessageCircle,
-  X,
-  Send,
-  User,
-  Package,
-  CreditCard,
-  HelpCircle,
-  ShoppingBag,
-  Copy,
-  Check,
-  Loader2,
-} from "lucide-react";
+import { MessageCircle, X, Send, Bot, User, Package, CreditCard, HelpCircle, ShoppingBag, Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,8 +42,6 @@ const PAYMENT_DETAILS = {
   },
 };
 
-const BOT_IMAGE = "/trendybot.png";
-
 const ChatWidget = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -64,144 +50,424 @@ const ChatWidget = () => {
   const [inputValue, setInputValue] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const copyToClipboard = async (text: string, field: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedField(field);
-    toast({ title: "Copied!", description: `${field} copied` });
-    setTimeout(() => setCopiedField(null), 2000);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      toast({
+        title: "Copied!",
+        description: `${field} copied to clipboard`,
+      });
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy manually",
+        variant: "destructive",
+      });
+    }
   };
 
-  const goTo = useCallback(
-    (path: string) => {
-      navigate(path);
-      setIsOpen(false);
-    },
-    [navigate]
-  );
+  // Quick action handlers
+  const goToOrders = useCallback(() => {
+    navigate("/user-dashboard");
+    setIsOpen(false);
+  }, [navigate]);
 
+  const goToShop = useCallback(() => {
+    navigate("/shop");
+    setIsOpen(false);
+  }, [navigate]);
+
+  const goToCart = useCallback(() => {
+    navigate("/cart");
+    setIsOpen(false);
+  }, [navigate]);
+
+  const goToContact = useCallback(() => {
+    navigate("/contact");
+    setIsOpen(false);
+  }, [navigate]);
+
+  const goToCheckout = useCallback(() => {
+    navigate("/checkout");
+    setIsOpen(false);
+  }, [navigate]);
+
+  // Initialize with welcome message when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      setMessages([
-        {
-          id: "1",
-          content:
-            "Hey 👋 I’m TrendyBot AI — your smart shopping assistant. How can I help you today?",
-          sender: "bot",
-          timestamp: new Date(),
-          actions: [
-            { label: "Browse Shop", action: () => goTo("/shop"), icon: <ShoppingBag className="h-3 w-3" /> },
-            { label: "My Orders", action: () => goTo("/user-dashboard"), icon: <Package className="h-3 w-3" /> },
-          ],
-        },
-      ]);
+      setMessages([{
+        id: "1",
+        content: "Hey! 👋 I'm TrendyBot, your AI shopping assistant. Ask me anything about products, orders, payments, or shopping!",
+        sender: "bot",
+        timestamp: new Date(),
+        actions: [
+          { label: "Browse Shop", action: goToShop, icon: <ShoppingBag className="h-3 w-3" /> },
+          { label: "My Orders", action: goToOrders, icon: <Package className="h-3 w-3" /> },
+        ],
+      }]);
     }
-  }, [isOpen, messages.length, goTo]);
+  }, [isOpen, messages.length, goToShop, goToOrders]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages]);
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const getAIResponse = async (userMessage: string): Promise<{ text: string; showPaymentDetails: boolean; actions?: QuickAction[] }> => {
+    try {
+      const newHistory = [...conversationHistory, { role: "user", content: userMessage }];
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trendybot-chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          messages: newHistory,
+          userMessage: userMessage,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (response.status === 429 || response.status === 402) {
+          return { 
+            text: errorData.message || "I'm a bit busy right now. Please try again in a moment!", 
+            showPaymentDetails: false 
+          };
+        }
+        throw new Error(errorData.error || "Failed to get response");
+      }
+
+      const data = await response.json();
+      
+      // Update conversation history
+      setConversationHistory([
+        ...newHistory,
+        { role: "assistant", content: data.message }
+      ]);
+
+      // Determine actions based on response
+      let actions: QuickAction[] = [];
+      const lowerMessage = userMessage.toLowerCase();
+      const lowerResponse = data.message.toLowerCase();
+
+      if (data.showPaymentActions || lowerMessage.includes("pay") || lowerResponse.includes("payment")) {
+        actions = [
+          { label: "I've Made Payment", action: () => sendMessage("I've made payment"), icon: <Check className="h-3 w-3" /> },
+          { label: "Need Help", action: goToContact, icon: <HelpCircle className="h-3 w-3" /> },
+        ];
+      } else if (lowerMessage.includes("order") || lowerResponse.includes("order")) {
+        actions = [{ label: "View Orders", action: goToOrders, icon: <Package className="h-3 w-3" /> }];
+      } else if (lowerMessage.includes("shop") || lowerMessage.includes("product") || lowerMessage.includes("browse")) {
+        actions = [{ label: "Browse Shop", action: goToShop, icon: <ShoppingBag className="h-3 w-3" /> }];
+      } else if (lowerMessage.includes("cart") || lowerMessage.includes("checkout")) {
+        actions = [{ label: "Go to Cart", action: goToCart, icon: <ShoppingBag className="h-3 w-3" /> }];
+      }
+
+      return {
+        text: data.message,
+        showPaymentDetails: data.showPaymentActions || lowerMessage.includes("pay") || lowerMessage.includes("how to buy"),
+        actions: actions.length > 0 ? actions : undefined,
+      };
+    } catch (error) {
+      console.error("TrendyBot error:", error);
+      return {
+        text: "I'm having a small hiccup! 😅 Let me know what you need help with - orders, payments, products, or returns?",
+        showPaymentDetails: false,
+        actions: [
+          { label: "Browse Shop", action: goToShop, icon: <ShoppingBag className="h-3 w-3" /> },
+          { label: "Contact Support", action: goToContact, icon: <HelpCircle className="h-3 w-3" /> },
+        ],
+      };
+    }
+  };
 
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    setMessages((p) => [
-      ...p,
-      { id: Date.now().toString(), content, sender: "user", timestamp: new Date() },
-    ]);
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: content.trim(),
+      sender: "user",
+      timestamp: new Date(),
+    };
 
+    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      setMessages((p) => [
-        ...p,
-        {
-          id: (Date.now() + 1).toString(),
-          content:
-            "I’ve got you! 😊 Ask me about products, payments, orders, or delivery.",
-          sender: "bot",
-          timestamp: new Date(),
-        },
-      ]);
+    try {
+      const response = await getAIResponse(content);
+      
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: response.text,
+        sender: "bot",
+        timestamp: new Date(),
+        actions: response.actions,
+        showPaymentDetails: response.showPaymentDetails,
+      };
+      
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "Sorry, I'm having trouble connecting. Please try again!",
+        sender: "bot",
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    sendMessage(inputValue);
+  };
+
+  const PaymentDetailsCard = () => (
+    <div className="mt-3 space-y-3 bg-gradient-to-br from-primary/5 to-accent/5 p-4 rounded-xl border border-border/50">
+      <h4 className="font-semibold text-sm flex items-center gap-2">
+        <CreditCard className="h-4 w-4 text-primary" />
+        Payment Methods
+      </h4>
+      
+      {/* Bank Transfer */}
+      <div className="bg-background/80 p-3 rounded-lg space-y-2">
+        <p className="text-xs font-medium text-primary">🏦 Bank Transfer</p>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Bank:</span>
+            <span className="font-medium">{PAYMENT_DETAILS.bank.name}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Account Name:</span>
+            <div className="flex items-center gap-1">
+              <span className="font-medium text-[11px]">{PAYMENT_DETAILS.bank.accountName}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5"
+                onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountName, "Account Name")}
+              >
+                {copiedField === "Account Name" ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Account No:</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono font-medium">{PAYMENT_DETAILS.bank.accountNumber}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-5 w-5"
+                onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountNumber, "Account Number")}
+              >
+                {copiedField === "Account Number" ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Crypto */}
+      <div className="bg-background/80 p-3 rounded-lg space-y-2">
+        <p className="text-xs font-medium text-primary">💰 Cryptocurrency</p>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Network:</span>
+            <span className="font-medium">{PAYMENT_DETAILS.crypto.network}</span>
+          </div>
+          <div className="space-y-1">
+            <span className="text-muted-foreground">Wallet Address:</span>
+            <div className="flex items-center gap-1 bg-muted/50 p-2 rounded">
+              <span className="font-mono text-[10px] break-all flex-1">{PAYMENT_DETAILS.crypto.walletAddress}</span>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 shrink-0"
+                onClick={() => copyToClipboard(PAYMENT_DETAILS.crypto.walletAddress, "Wallet Address")}
+              >
+                {copiedField === "Wallet Address" ? (
+                  <Check className="h-3 w-3 text-green-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <>
-      {/* Floating Button */}
+      {/* Chat Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-xl"
+        className={cn(
+          "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full shadow-lg transition-all duration-300",
+          isOpen && "rotate-90 bg-destructive hover:bg-destructive/90"
+        )}
         size="icon"
       >
-        {isOpen ? <X /> : <MessageCircle />}
+        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </Button>
 
       {/* Chat Window */}
       <div
         className={cn(
-          "fixed bottom-24 right-6 z-50 w-[380px] max-w-[95vw] bg-background border rounded-2xl shadow-2xl overflow-hidden transition-all",
-          isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+          "fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-3rem)] bg-background border border-border rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden",
+          isOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4 pointer-events-none"
         )}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-cyan-500 to-blue-600 p-4 text-white flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full overflow-hidden shadow-[0_0_12px_rgba(0,255,255,0.8)]">
-            <img src={BOT_IMAGE} alt="TrendyBot AI" className="h-full w-full object-cover" />
+        <div className="bg-gradient-to-r from-pink-500 to-orange-500 text-white p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold">TrendyBot AI</h3>
+              <p className="text-xs text-white/80">Powered by AI • Always here to help</p>
+            </div>
+            <div className="ml-auto flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs text-white/80">Online</span>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold">TrendyBot AI</h3>
-            <p className="text-xs opacity-80">Smart Shopping Assistant</p>
-          </div>
-          <span className="ml-auto text-xs flex items-center gap-1">
-            <span className="h-2 w-2 bg-green-400 rounded-full animate-pulse" /> Online
-          </span>
         </div>
+
+        {/* Recently Asked Questions */}
+        {messages.length <= 1 && (
+          <div className="p-3 border-b border-border/50 bg-muted/30">
+            <p className="text-xs font-medium text-muted-foreground mb-2">🔥 Popular Questions</p>
+            <div className="flex flex-wrap gap-1.5">
+              {RECENTLY_ASKED.map((question) => (
+                <Button
+                  key={question}
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs rounded-full"
+                  onClick={() => sendMessage(question)}
+                >
+                  {question}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Messages */}
         <ScrollArea className="h-[320px] p-4" ref={scrollRef}>
           <div className="space-y-4">
-            {messages.map((m) => (
-              <div key={m.id} className={cn("flex gap-2", m.sender === "user" && "flex-row-reverse")}>
+            {messages.map((message) => (
+              <div key={message.id}>
                 <div
                   className={cn(
-                    "h-8 w-8 rounded-full overflow-hidden shrink-0",
-                    m.sender === "bot"
-                      ? "shadow-[0_0_10px_rgba(0,200,255,0.7)]"
-                      : "bg-primary flex items-center justify-center"
+                    "flex gap-2",
+                    message.sender === "user" && "flex-row-reverse"
                   )}
                 >
-                  {m.sender === "bot" ? (
-                    <img src={BOT_IMAGE} className="h-full w-full object-cover" />
-                  ) : (
-                    <User className="h-4 w-4 text-white" />
-                  )}
+                  <div
+                    className={cn(
+                      "h-7 w-7 rounded-full flex items-center justify-center shrink-0",
+                      message.sender === "bot"
+                        ? "bg-gradient-to-r from-pink-500 to-orange-500"
+                        : "bg-primary"
+                    )}
+                  >
+                    {message.sender === "bot" ? (
+                      <Bot className="h-4 w-4 text-white" />
+                    ) : (
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      "max-w-[85%] rounded-2xl px-4 py-2.5",
+                      message.sender === "bot"
+                        ? "bg-muted text-foreground rounded-tl-sm"
+                        : "bg-primary text-primary-foreground rounded-tr-sm"
+                    )}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    
+                    {/* Payment Details */}
+                    {message.showPaymentDetails && message.sender === "bot" && (
+                      <PaymentDetailsCard />
+                    )}
+                    
+                    {/* Quick Actions */}
+                    {message.actions && message.actions.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {message.actions.map((action, i) => (
+                          <Button
+                            key={i}
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 text-xs rounded-full"
+                            onClick={action.action}
+                          >
+                            {action.icon}
+                            <span className="ml-1">{action.label}</span>
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div
+                <p
                   className={cn(
-                    "px-4 py-2 rounded-2xl text-sm",
-                    m.sender === "bot"
-                      ? "bg-muted rounded-tl-sm"
-                      : "bg-primary text-white rounded-tr-sm"
+                    "text-[10px] text-muted-foreground mt-1",
+                    message.sender === "user" ? "text-right mr-9" : "ml-9"
                   )}
                 >
-                  {m.content}
-                </div>
+                  {message.timestamp.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
               </div>
             ))}
 
             {isTyping && (
               <div className="flex gap-2">
-                <div className="h-8 w-8 rounded-full overflow-hidden shadow-[0_0_10px_rgba(0,200,255,0.7)]">
-                  <img src={BOT_IMAGE} className="h-full w-full object-cover" />
+                <div className="h-7 w-7 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-white" />
                 </div>
-                <div className="bg-muted px-4 py-2 rounded-2xl flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-xs">TrendyBot is thinking…</span>
+                <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="text-xs text-muted-foreground">TrendyBot is thinking...</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -210,22 +476,27 @@ const ChatWidget = () => {
 
         {/* Input */}
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            sendMessage(inputValue);
-          }}
-          className="p-3 border-t flex gap-2"
+          onSubmit={handleSubmit}
+          className="p-3 border-t border-border bg-background/95 backdrop-blur"
         >
-          <Input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Ask TrendyBot…"
-            className="rounded-full"
-          />
-          <Button type="submit" size="icon" className="rounded-full">
-            <Send />
-          </Button>
+          <div className="flex gap-2">
+            <Input
+              ref={inputRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              placeholder="Ask me anything..."
+              className="flex-1 rounded-full bg-muted border-0 focus-visible:ring-1"
+              disabled={isTyping}
+            />
+            <Button
+              type="submit"
+              size="icon"
+              className="rounded-full shrink-0"
+              disabled={!inputValue.trim() || isTyping}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </form>
       </div>
     </>
