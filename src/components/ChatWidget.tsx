@@ -103,7 +103,7 @@ const ChatWidget = () => {
     if (isOpen && messages.length === 0) {
       setMessages([{
         id: "1",
-        content: "Hey! 👋 I'm NexCart, your AI shopping assistant. Ask me anything about products, orders, payments, or shopping!",
+        content: "Hey! 👋 I'm TrendyBot, your AI shopping assistant. Ask me anything about products, orders, payments, or shopping!",
         sender: "bot",
         timestamp: new Date(),
         actions: [
@@ -130,7 +130,7 @@ const ChatWidget = () => {
     try {
       const newHistory = [...conversationHistory, { role: "user", content: userMessage }];
       
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nexcart-chat`, {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trendybot-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -185,9 +185,9 @@ const ChatWidget = () => {
         actions: actions.length > 0 ? actions : undefined,
       };
     } catch (error) {
-      console.error("NexCart error:", error);
+      console.error("TrendyBot error:", error);
       return {
-        text: "I'm not sure I understand. Could you please rephrase your question?, Let me know what you need help with - orders, payments, products, or returns?",
+        text: "I'm having a small hiccup! 😅 Let me know what you need help with - orders, payments, products, or returns?",
         showPaymentDetails: false,
         actions: [
           { label: "Browse Shop", action: goToShop, icon: <ShoppingBag className="h-3 w-3" /> },
@@ -355,8 +355,8 @@ const ChatWidget = () => {
               <Bot className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-semibold">NexCart AI</h3>
-              <p className="text-xs text-white/80">Powered by SinaFast • Always here to help</p>
+              <h3 className="font-semibold">TrendyBot AI</h3>
+              <p className="text-xs text-white/80">Powered by AI • Always here to help</p>
             </div>
             <div className="ml-auto flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
@@ -466,7 +466,7 @@ const ChatWidget = () => {
                 <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
                   <div className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">NexCart is thinking...</span>
+                    <span className="text-xs text-muted-foreground">TrendyBot is thinking...</span>
                   </div>
                 </div>
               </div>
