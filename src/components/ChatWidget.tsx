@@ -187,7 +187,7 @@ const ChatWidget = () => {
     } catch (error) {
       console.error("NexCart error:", error);
       return {
-        text: "I'm having a small hiccup! 😅 Let me know what you need help with - orders, payments, products, or returns?",
+        text: "I'm not sure I understand. Could you please rephrase your question?, Let me know what you need help with - orders, payments, products, or returns?",
         showPaymentDetails: false,
         actions: [
           { label: "Browse Shop", action: goToShop, icon: <ShoppingBag className="h-3 w-3" /> },
