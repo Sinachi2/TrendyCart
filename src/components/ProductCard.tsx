@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart, Eye, GitCompareArrows } from "lucide-react";
+import { ShoppingCart, Heart, Eye, GitCompareArrows, Star, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
+import CountdownTimer from "@/components/CountdownTimer";
 
 interface ProductCardProps {
   id: string;
@@ -19,6 +20,10 @@ interface ProductCardProps {
   isNew?: boolean | null;
   stockQuantity?: number | null;
   description?: string | null;
+  dealExpiresAt?: string | null;
+  isDealActive?: boolean;
+  averageRating?: number;
+  reviewCount?: number;
   onQuickView?: () => void;
 }
 
@@ -32,6 +37,10 @@ const ProductCard = ({
   isNew, 
   stockQuantity = 0,
   description,
+  dealExpiresAt,
+  isDealActive,
+  averageRating = 0,
+  reviewCount = 0,
   onQuickView 
 }: ProductCardProps) => {
   const { user } = useAuth();
@@ -199,6 +208,10 @@ const ProductCard = ({
 
   const stockStatus = getStockStatus();
   const isOutOfStock = stockQuantity !== null && stockQuantity <= 0;
+  
+  // Check if deal has expired
+  const isDealExpired = dealExpiresAt ? new Date(dealExpiresAt) <= new Date() : false;
+  const showDealTimer = isDealActive && dealExpiresAt && !isDealExpired;
 
   return (
     <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300 cursor-pointer" onClick={() => navigate(`/product/${id}`)}>
@@ -214,12 +227,26 @@ const ProductCard = ({
               New
             </Badge>
           )}
+          {originalPrice && originalPrice > price && (
+            <Badge className="bg-destructive text-destructive-foreground">
+              -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
+            </Badge>
+          )}
           {stockStatus && (
             <Badge className={stockStatus.color}>
               {stockStatus.label}
             </Badge>
           )}
         </div>
+        {showDealTimer && (
+          <div className="absolute bottom-3 left-3">
+            <CountdownTimer
+              expiresAt={dealExpiresAt!}
+              variant="badge"
+              showIcon={true}
+            />
+          </div>
+        )}
         <div className="absolute top-3 right-3 flex flex-col gap-2">
           <Button
             size="icon"
@@ -265,6 +292,26 @@ const ProductCard = ({
       <CardContent className="p-4">
         <p className="text-sm text-muted-foreground mb-1">{category}</p>
         <h3 className="font-semibold text-lg mb-2 line-clamp-1">{name}</h3>
+        
+        {/* Rating display */}
+        {reviewCount > 0 && (
+          <div className="flex items-center gap-1 mb-2">
+            <div className="flex items-center">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-3 w-3 ${
+                    star <= Math.round(averageRating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-muted-foreground"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">({reviewCount})</span>
+          </div>
+        )}
+        
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold text-primary">${price}</span>
           {originalPrice && (

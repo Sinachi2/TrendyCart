@@ -4,6 +4,7 @@ import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield, GitCompareArrow
 import ProductReviews from "@/components/ProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
+import CountdownTimer from "@/components/CountdownTimer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -26,6 +27,8 @@ interface Product {
   category: string;
   stock_quantity: number | null;
   is_new: boolean | null;
+  deal_expires_at: string | null;
+  is_deal_active: boolean;
 }
 
 const ProductDetail = () => {
@@ -38,6 +41,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [dealExpired, setDealExpired] = useState(false);
 
   // Track recently viewed when product loads
   useEffect(() => {
@@ -192,6 +196,17 @@ const ProductDetail = () => {
   }
 
   const inStock = (product.stock_quantity ?? 0) > 0;
+  const hasActiveDeal = product.is_deal_active && product.deal_expires_at && !dealExpired;
+  const showDealPrice = hasActiveDeal && product.original_price;
+
+  const handleDealExpire = () => {
+    setDealExpired(true);
+    toast({
+      title: "Deal Expired",
+      description: "This limited-time deal has ended.",
+      variant: "destructive",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -232,6 +247,17 @@ const ProductDetail = () => {
                 {product.name}
               </h1>
               
+              {/* Deal Countdown Timer */}
+              {hasActiveDeal && (
+                <div className="mb-4">
+                  <CountdownTimer
+                    expiresAt={product.deal_expires_at!}
+                    onExpire={handleDealExpire}
+                    variant="default"
+                  />
+                </div>
+              )}
+              
               <div className="flex items-center gap-3 mb-6">
                 <span className="text-3xl font-bold text-primary">
                   ${product.price}
@@ -241,7 +267,7 @@ const ProductDetail = () => {
                     <span className="text-xl text-muted-foreground line-through">
                       ${product.original_price}
                     </span>
-                    <Badge variant="secondary" className="text-sm">
+                    <Badge variant="secondary" className="text-sm bg-destructive/10 text-destructive">
                       Save ${(product.original_price - product.price).toFixed(2)}
                     </Badge>
                   </>
@@ -257,6 +283,11 @@ const ProductDetail = () => {
                 ) : (
                   <Badge variant="secondary" className="bg-red-500/10 text-red-700 dark:text-red-400">
                     Out of Stock
+                  </Badge>
+                )}
+                {dealExpired && (
+                  <Badge variant="secondary" className="bg-orange-500/10 text-orange-700">
+                    Deal Expired
                   </Badge>
                 )}
               </div>
