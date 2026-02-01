@@ -198,6 +198,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_items: {
         Row: {
           created_at: string | null
@@ -416,9 +449,11 @@ export type Database = {
         Row: {
           category: string
           created_at: string | null
+          deal_expires_at: string | null
           description: string | null
           id: string
           image_url: string | null
+          is_deal_active: boolean
           is_new: boolean | null
           name: string
           original_price: number | null
@@ -429,9 +464,11 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string | null
+          deal_expires_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
+          is_deal_active?: boolean
           is_new?: boolean | null
           name: string
           original_price?: number | null
@@ -442,9 +479,11 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string | null
+          deal_expires_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
+          is_deal_active?: boolean
           is_new?: boolean | null
           name?: string
           original_price?: number | null

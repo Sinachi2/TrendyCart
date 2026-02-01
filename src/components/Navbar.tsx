@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/trendycart-logo.png";
 import { CartSidebar } from "@/components/CartSidebar";
+import NotificationBell from "@/components/NotificationBell";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -111,6 +112,7 @@ const Navbar = () => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
+            {user && <NotificationBell />}
             <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (

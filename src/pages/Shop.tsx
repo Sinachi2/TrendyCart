@@ -36,6 +36,8 @@ interface Product {
   is_new: boolean | null;
   stock_quantity: number | null;
   created_at: string | null;
+  deal_expires_at: string | null;
+  is_deal_active: boolean;
   averageRating?: number;
   reviewCount?: number;
 }
@@ -50,6 +52,8 @@ const Shop = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [maxPrice, setMaxPrice] = useState(1000);
   const [minRating, setMinRating] = useState(0);
+  const [showOnSale, setShowOnSale] = useState(false);
+  const [showInStock, setShowInStock] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   useEffect(() => {
@@ -109,7 +113,9 @@ const Shop = () => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
     const matchesRating = (product.averageRating || 0) >= minRating;
-    return matchesSearch && matchesCategory && matchesPrice && matchesRating;
+    const matchesSale = !showOnSale || (product.original_price && product.original_price > product.price);
+    const matchesStock = !showInStock || (product.stock_quantity && product.stock_quantity > 0);
+    return matchesSearch && matchesCategory && matchesPrice && matchesRating && matchesSale && matchesStock;
   });
 
   // Sort products
@@ -125,6 +131,13 @@ const Shop = () => {
         return (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0);
       case "rating":
         return (b.averageRating || 0) - (a.averageRating || 0);
+      case "deals":
+        // Sort active deals first, then by expiration
+        const aIsDeal = a.is_deal_active && a.deal_expires_at;
+        const bIsDeal = b.is_deal_active && b.deal_expires_at;
+        if (aIsDeal && !bIsDeal) return -1;
+        if (!aIsDeal && bIsDeal) return 1;
+        return 0;
       default:
         return 0;
     }
@@ -140,7 +153,7 @@ const Shop = () => {
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCategory, sortBy, priceRange, minRating]);
+  }, [searchQuery, selectedCategory, sortBy, priceRange, minRating, showOnSale, showInStock]);
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
 
@@ -193,8 +206,33 @@ const Shop = () => {
               <SelectItem value="price-high">Price: High to Low</SelectItem>
               <SelectItem value="popular">Popular</SelectItem>
               <SelectItem value="rating">Highest Rated</SelectItem>
+              <SelectItem value="deals">Limited Time Deals</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Filter Toggles */}
+        <div className="flex flex-wrap gap-3 mb-4">
+          <button
+            onClick={() => setShowOnSale(!showOnSale)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              showOnSale
+                ? "bg-destructive text-destructive-foreground"
+                : "bg-muted hover:bg-muted/80"
+            }`}
+          >
+            🔥 On Sale
+          </button>
+          <button
+            onClick={() => setShowInStock(!showInStock)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              showInStock
+                ? "bg-green-600 text-white"
+                : "bg-muted hover:bg-muted/80"
+            }`}
+          >
+            ✓ In Stock Only
+          </button>
         </div>
 
         {/* Rating Filter */}
@@ -289,6 +327,10 @@ const Shop = () => {
                       isNew={product.is_new}
                       stockQuantity={product.stock_quantity}
                       description={product.description}
+                      dealExpiresAt={product.deal_expires_at}
+                      isDealActive={product.is_deal_active}
+                      averageRating={product.averageRating}
+                      reviewCount={product.reviewCount}
                       onQuickView={() => setQuickViewProduct(product)}
                     />
                   </div>

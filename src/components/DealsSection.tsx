@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Percent } from "lucide-react";
+import CountdownTimer from "@/components/CountdownTimer";
 
 interface Product {
   id: string;
@@ -13,16 +14,14 @@ interface Product {
   original_price: number;
   image_url: string | null;
   category: string;
+  deal_expires_at: string | null;
+  is_deal_active: boolean;
 }
 
 const DealsSection = () => {
   const [deals, setDeals] = useState<Product[]>([]);
 
-  useEffect(() => {
-    loadDeals();
-  }, []);
-
-  const loadDeals = async () => {
+  const loadDeals = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("products")
@@ -32,14 +31,31 @@ const DealsSection = () => {
         .limit(6);
 
       if (error) throw error;
-      // Filter products where original_price > price
-      const discountedProducts = (data || []).filter(
-        (p) => p.original_price && p.original_price > p.price
-      );
+      
+      // Filter products where original_price > price AND deal hasn't expired
+      const now = new Date();
+      const discountedProducts = (data || []).filter((p) => {
+        if (!p.original_price || p.original_price <= p.price) return false;
+        
+        // If deal has expiration, check if it's still valid
+        if (p.deal_expires_at) {
+          return new Date(p.deal_expires_at) > now;
+        }
+        return true;
+      });
       setDeals(discountedProducts);
     } catch (error) {
       console.error("Error loading deals:", error);
     }
+  }, []);
+
+  useEffect(() => {
+    loadDeals();
+  }, [loadDeals]);
+
+  const handleDealExpire = () => {
+    // Reload deals when one expires
+    loadDeals();
   };
 
   const calculateDiscount = (price: number, originalPrice: number) => {
@@ -84,6 +100,15 @@ const DealsSection = () => {
                   <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground text-lg px-3 py-1">
                     -{calculateDiscount(product.price, product.original_price)}%
                   </Badge>
+                  {product.deal_expires_at && (
+                    <div className="absolute top-3 right-3">
+                      <CountdownTimer
+                        expiresAt={product.deal_expires_at}
+                        variant="badge"
+                        onExpire={handleDealExpire}
+                      />
+                    </div>
+                  )}
                 </div>
                 <CardContent className="p-4">
                   <p className="text-sm text-muted-foreground mb-1">{product.category}</p>

@@ -143,14 +143,25 @@ const DashboardPayments = () => {
 
       if (error) throw error;
 
-      // If verified, update order status to processing
+      // If verified, update order status and create notification
       if (newStatus === "verified" && payment.order_id) {
         await supabase
           .from("orders")
           .update({ status: "processing" })
           .eq("id", payment.order_id);
 
-        // Send notification to user
+        // Create in-app notification for user
+        await supabase
+          .from("notifications")
+          .insert({
+            user_id: payment.user_id,
+            type: "payment_verified",
+            title: "Payment Verified!",
+            message: `Your payment for order #${payment.order_id.slice(0, 8)} has been verified. Your order is now being processed.`,
+            data: { order_id: payment.order_id },
+          });
+
+        // Send email notification
         if (payment.profiles?.email) {
           try {
             await supabase.functions.invoke("send-notification", {
@@ -168,6 +179,21 @@ const DashboardPayments = () => {
             console.error("Error sending notification:", notifError);
           }
         }
+      }
+
+      // If rejected, create rejection notification
+      if (newStatus === "rejected") {
+        await supabase
+          .from("notifications")
+          .insert({
+            user_id: payment.user_id,
+            type: "payment_rejected",
+            title: "Payment Rejected",
+            message: notes 
+              ? `Your payment was rejected: ${notes}` 
+              : "Your payment proof was rejected. Please submit a new payment proof.",
+            data: { order_id: payment.order_id },
+          });
       }
 
       // Update local state
