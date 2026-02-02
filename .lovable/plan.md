@@ -1,288 +1,210 @@
 
-# Comprehensive Implementation Plan
 
-This plan covers multiple interconnected features for TrendyCart: real-time notifications, payment proof uploads, limited-time offers with countdown timers, and UI/UX improvements across the dashboard and shop.
+# Improved Step-Based Checkout Flow
+
+This plan redesigns the checkout experience with a modern, step-based flow that gives users full control over what they pay for and how they pay.
 
 ---
 
 ## Overview
 
-The implementation is organized into 5 major phases:
+The new checkout flow will guide users through 4 clear steps:
 
-1. **Real-Time Payment Notifications** - In-app notifications when payments are verified
-2. **Payment Proof Upload Flow** - Complete the checkout payment upload and email confirmations
-3. **Limited-Time Offers System** - Countdown timers, auto-expiration, and deal management
-4. **Dashboard Improvements** - Modernized admin dashboard with better UX
-5. **Shop Performance & UX** - Enhanced filtering, product cards, and checkout flow
+```text
+Step 1: Select Items → Step 2: Shipping Address → Step 3: Payment Method → Step 4: Confirm & Pay
+```
 
 ---
 
-## Phase 1: Real-Time Payment Notifications
+## Current State
 
-### 1.1 Database Changes
-Add a `notifications` table to store in-app notifications:
-- `id` (uuid, primary key)
-- `user_id` (uuid, references auth.users)
-- `type` (text: payment_verified, order_shipped, price_drop, etc.)
-- `title` (text)
-- `message` (text)
-- `read` (boolean, default false)
-- `data` (jsonb, for order_id, etc.)
-- `created_at` (timestamp)
-
-Enable realtime on this table for instant updates.
-
-### 1.2 Create Notification Hook
-Create `src/hooks/useNotifications.tsx`:
-- Subscribe to the notifications table using Supabase Realtime
-- Track unread count
-- Provide methods: `markAsRead`, `markAllAsRead`, `deleteNotification`
-
-### 1.3 Notification Bell Component
-Create `src/components/NotificationBell.tsx`:
-- Display bell icon in navbar with unread count badge
-- Dropdown showing recent notifications
-- Click to view details and mark as read
-- "Mark all as read" action
-
-### 1.4 Update Navbar
-Integrate NotificationBell into Navbar for logged-in users.
-
-### 1.5 Update Payment Verification Flow
-When admin verifies payment in `DashboardPayments.tsx`:
-- Insert notification into the `notifications` table
-- Trigger realtime update to user
+The existing checkout:
+- Redirects to `/checkout` with ALL cart items pre-selected
+- Shipping and payment options are shown simultaneously
+- Users cannot choose which specific items to checkout
+- No step-based progression
 
 ---
 
-## Phase 2: Payment Proof Upload & Email Confirmations
+## New User Experience
 
-### 2.1 Update Checkout Component
-Modify `src/pages/Checkout.tsx`:
-- After order is created, enable payment proof upload to Supabase storage
-- Save record to `payment_proofs` table with:
-  - `order_id`
-  - `user_id`
-  - `payment_method` (bank_transfer or crypto)
-  - `proof_url` (from storage upload)
-  - `amount`
-  - `status` (pending)
-- Call edge function to send confirmation email
+### Step 1: Select Items to Purchase
+- Display all cart items with checkboxes
+- "Select All" toggle at the top
+- Real-time price updates as items are selected/deselected
+- Show item images, names, quantities, and individual prices
+- Minimum 1 item required to proceed
+- "Continue" button to move to next step
 
-### 2.2 Create Payment Proof Upload Component
-Create `src/components/PaymentProofUpload.tsx`:
-- Accepts order ID and amount
-- File input with preview
-- Payment method selection (bank/crypto)
+### Step 2: Shipping Address
+- Show saved addresses (if any) as selectable cards
+- Option to enter a new address
+- Form validation before proceeding
+- Summary of selected items shown on the side
+- "Back" button to return to item selection
+
+### Step 3: Choose Payment Method
+- Clear cards for Bank Transfer and Cryptocurrency
+- Show payment details only after selection
+- Copy-to-clipboard buttons for account/wallet info
 - Transaction reference input (optional)
-- Submit button to upload and save
-- Success/pending state display
+- Visual confirmation of selected method
 
-### 2.3 Email Confirmation Integration
-Update the flow to call `send-notification` edge function with:
-- `type: "payment_submitted"`
-- User email
-- Order details
-
----
-
-## Phase 3: Limited-Time Offers with Countdown
-
-### 3.1 Database Schema Update
-Add columns to `products` table:
-- `deal_expires_at` (timestamp with time zone, nullable)
-- `is_deal_active` (boolean, default false)
-
-### 3.2 Create Countdown Timer Component
-Create `src/components/CountdownTimer.tsx`:
-- Props: `expiresAt` (Date), `onExpire` callback
-- Display: Days (if >1), Hours, Minutes, Seconds
-- Real-time countdown using `setInterval`
-- Visual styling with urgency colors (red when <1 hour)
-- Smooth animations
-
-### 3.3 Update DealsSection Component
-Modify `src/components/DealsSection.tsx`:
-- Filter products where `is_deal_active = true` AND `deal_expires_at > now()`
-- Show CountdownTimer on each deal card
-- Auto-refresh list when deals expire
-- Handle expired deals gracefully
-
-### 3.4 Update Product Card Component
-Modify `src/components/ProductCard.tsx`:
-- Accept `dealExpiresAt` prop
-- Show countdown badge for active deals
-- Visual indicator when deal is about to expire
-
-### 3.5 Update Product Detail Page
-Modify `src/pages/ProductDetail.tsx`:
-- Display countdown timer prominently for deal products
-- Show "Deal Expired" message when timer ends
-- Prevent adding expired deal items at discounted price
-
-### 3.6 Update Shop Page
-Modify `src/pages/Shop.tsx`:
-- Add "Limited Time Deals" sort option
-- Add "On Sale" filter toggle
-- Show countdown on deal products
-
-### 3.7 Admin Deal Management
-Create `src/components/DealManagement.tsx`:
-- UI for setting/editing deal expiration dates
-- Quick actions: "Start 24h Deal", "End Deal"
-- Integrate into product edit flow
+### Step 4: Review & Submit Payment Proof
+- Full order summary (items, shipping, payment method)
+- Upload payment proof (image/PDF)
+- Preview uploaded file
+- Clear "Submit Order" button
+- Success confirmation with order ID
 
 ---
 
-## Phase 4: Dashboard Improvements
+## Component Architecture
 
-### 4.1 Redesign Admin Dashboard
-Completely overhaul `src/pages/Dashboard.tsx`:
-- Modern card-based layout with glassmorphism effects
-- Clear visual hierarchy with sections:
-  - Revenue Overview (with trend chart)
-  - Quick Stats Row (orders, customers, products, pending)
-  - Quick Actions Panel
-  - Recent Activity Feed
-  - Low Stock Alerts
+### New Component: `CheckoutStepper.tsx`
+A visual step indicator showing progress through the checkout:
+- Step numbers with labels
+- Active/completed/upcoming states
+- Smooth transitions between steps
 
-### 4.2 Quick Action Buttons
-Add prominent action buttons:
-- "Add Product" - Links to product creation
-- "View Orders" - Links to orders page
-- "Manage Discounts" - Links to coupons page
-- "Verify Payments" - Links to payments page
-
-### 4.3 Improved Stats Cards
-Update stat cards:
-- Animated number transitions
-- Sparkline mini-charts
-- Color-coded status indicators
-- Comparison badges (vs last period)
-
-### 4.4 Activity Feed Component
-Create `src/components/ActivityFeed.tsx`:
-- Recent orders, payments, and customer signups
-- Relative timestamps ("2 minutes ago")
-- Quick action links
-- Status badges with colors
-
-### 4.5 Performance Optimizations
-- Lazy load charts and heavy components
-- Use React.memo for stat cards
-- Optimize database queries with proper indexes
-- Add loading skeletons for better perceived performance
+### Modified Component: `Checkout.tsx`
+Complete refactor with:
+- `checkoutStep` state (1-4)
+- `selectedItems` state (Set of cart item IDs)
+- `paymentMethod` state
+- Conditional rendering based on current step
+- Step navigation functions
 
 ---
 
-## Phase 5: Shop Improvements
+## Step-by-Step Implementation
 
-### 5.1 Enhanced Product Cards
-Update `src/components/ProductCard.tsx`:
-- Add star rating display
-- Show review count
-- Animated hover effects
-- Deal countdown badge
-- "Limited Stock" warning
-- Skeleton loading state
+### 1. Create Checkout Stepper Component
+New file: `src/components/CheckoutStepper.tsx`
+- Props: `currentStep`, `steps` array
+- Visual progress indicator
+- Clickable steps to go back (not forward)
 
-### 5.2 Improved Filtering System
-Update `src/pages/Shop.tsx`:
-- Add "On Sale" toggle filter
-- Add "In Stock Only" toggle
-- Sort options:
-  - "Limited Time Deals First"
-  - "Best Sellers"
-  - "Most Reviewed"
-- Collapsible filter sidebar on mobile
-- Active filter chips with remove buttons
+### 2. Refactor Checkout Page
+Modify: `src/pages/Checkout.tsx`
 
-### 5.3 Performance Optimizations
-- Implement virtual scrolling for large product lists
-- Optimize image loading with lazy loading
-- Cache filter results
-- Debounce search input
+**New State Variables:**
+```
+checkoutStep: number (1-4)
+selectedItemIds: Set<string>
+paymentMethod: "bank_transfer" | "crypto" | null
+```
 
-### 5.4 Visual Improvements
-- Better discount badge styling
-- Consistent spacing and typography
-- Smooth transitions and animations
-- Improved responsive grid breakpoints
+**Step 1 Component - Item Selection:**
+- Checkbox list of cart items
+- "Select All" / "Deselect All" toggle
+- Dynamic total calculation
+- Disabled continue if no items selected
+
+**Step 2 Component - Shipping (existing logic):**
+- Saved address selection
+- New address form
+- Form validation
+
+**Step 3 Component - Payment Selection:**
+- Two large selection cards
+- Bank Transfer card with details
+- Crypto card with wallet info
+- Copy buttons for details
+- Selection required to continue
+
+**Step 4 Component - Review & Upload:**
+- Order summary recap
+- Payment proof upload (reuse PaymentProofUpload component logic)
+- Final submission
+
+### 3. Update Cart Integration
+- "Checkout" from cart now goes to step 1 (not directly to shipping)
+- Selected items persist in checkout state
+- Unselected items remain in cart
 
 ---
 
-## Implementation Files
+## UI/UX Details
 
-### New Files to Create:
-```
-src/hooks/useNotifications.tsx
-src/components/NotificationBell.tsx
-src/components/CountdownTimer.tsx
-src/components/PaymentProofUpload.tsx
-src/components/ActivityFeed.tsx
-src/components/DealManagement.tsx
-```
-
-### Files to Modify:
-```
-src/pages/Checkout.tsx - Payment proof upload integration
-src/pages/Dashboard.tsx - Redesigned layout
-src/pages/DashboardPayments.tsx - Notification trigger
-src/pages/Shop.tsx - Enhanced filtering
-src/pages/ProductDetail.tsx - Countdown display
-src/components/DealsSection.tsx - Countdown timers
-src/components/ProductCard.tsx - Deal badges, ratings
-src/components/Navbar.tsx - Notification bell
+### Step Progress Indicator
+```text
+┌─────────────────────────────────────────────────────────┐
+│  (1)        (2)         (3)          (4)               │
+│   ●────────○──────────○────────────○                   │
+│ Select   Shipping    Payment     Confirm               │
+│ Items    Address     Method                            │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Database Migrations:
-1. Create `notifications` table with RLS policies
-2. Add `deal_expires_at` and `is_deal_active` columns to products
-3. Enable realtime on notifications table
+### Mobile Responsiveness
+- Steps stack vertically on small screens
+- Full-width buttons
+- Collapsible order summary
+- Touch-friendly checkboxes
+
+### Animations
+- Smooth slide transitions between steps
+- Fade in/out for content changes
+- Progress bar animation
+
+---
+
+## Error Handling
+
+| Scenario | Behavior |
+|----------|----------|
+| No items selected | Disable "Continue", show helper text |
+| Invalid address | Show field errors, prevent progression |
+| No payment method selected | Disable "Continue" button |
+| No proof uploaded | Show error toast, prevent submission |
+| Network error | Toast notification, retain form state |
+
+---
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/pages/Checkout.tsx` | Complete refactor with step-based flow |
+| `src/components/CheckoutStepper.tsx` | **New file** - Step indicator |
 
 ---
 
 ## Technical Details
 
-### Countdown Timer Logic
-```text
-1. Calculate time remaining = expires_at - now()
-2. Update every second using setInterval
-3. When remaining <= 0:
-   - Call onExpire callback
-   - Display "Expired" state
-   - Disable purchase at deal price
-```
+### State Management
+- All checkout state managed in `Checkout.tsx`
+- No need for context - single page flow
+- Local storage backup for recovery (optional enhancement)
 
-### Realtime Notification Flow
-```text
-1. Admin verifies payment
-2. Insert into notifications table
-3. Supabase broadcasts change
-4. User's useNotifications hook receives update
-5. NotificationBell shows new notification
-6. Toast notification appears
-```
+### Order Creation Flow
+1. User completes all 4 steps
+2. Create order with only SELECTED items
+3. Create order_items for selected items only
+4. Remove ONLY selected items from cart (unselected stay)
+5. Upload payment proof to storage
+6. Create payment_proof record
+7. Redirect to order confirmation
 
-### Payment Proof Upload Flow
-```text
-1. User completes order form
-2. User uploads proof image
-3. Image saved to payment-proofs bucket
-4. Record created in payment_proofs table
-5. Email sent via edge function
-6. Order marked as "awaiting verification"
-7. Admin sees in DashboardPayments
-8. On verification, notification sent to user
+### Price Calculations
+```
+selectedSubtotal = sum of (price × quantity) for selected items
+shipping = selectedSubtotal > 50 ? 0 : 9.99
+discount = applied coupon discount
+total = selectedSubtotal + shipping - discount
 ```
 
 ---
 
-## Estimated Scope
+## Implementation Order
 
-- **New Components**: 6
-- **Modified Components**: 9
-- **Database Migrations**: 2
-- **Edge Function Updates**: 1
+1. Create `CheckoutStepper.tsx` component
+2. Refactor `Checkout.tsx` with step state and navigation
+3. Implement Step 1 (Item Selection)
+4. Update Step 2 (Shipping - mostly existing code)
+5. Implement Step 3 (Payment Method Selection)
+6. Implement Step 4 (Review & Upload Proof)
+7. Update order creation logic for partial cart checkout
+8. Test complete flow on desktop and mobile
 
-This plan ensures all features work together cohesively while maintaining code quality and user experience.
