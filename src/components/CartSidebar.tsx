@@ -166,16 +166,25 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
     <>
       {/* Main Cart Sidebar */}
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-lg flex flex-col">
-          <SheetHeader>
+        <SheetContent className="w-full sm:max-w-md flex flex-col p-0">
+          <SheetHeader className="px-6 py-4 border-b border-border/50">
             <SheetTitle className="flex items-center justify-between">
-              <span>Shopping Cart ({cartItems.length})</span>
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                <span>Shopping Cart</span>
+                {cartItems.length > 0 && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    ({cartItems.length} items)
+                  </span>
+                )}
+              </div>
               {cartItems.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={clearAll}
                   disabled={loading}
+                  className="text-muted-foreground hover:text-destructive text-xs"
                 >
                   Clear All
                 </Button>
@@ -183,45 +192,48 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
             </SheetTitle>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             {cartItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
+                <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
+                  <ShoppingBag className="h-10 w-10 text-muted-foreground/50" />
+                </div>
                 <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
-                <p className="text-muted-foreground mb-6">
-                  Add some products to get started
+                <p className="text-muted-foreground text-sm mb-6 max-w-[200px]">
+                  Looks like you haven't added any products yet
                 </p>
-                <Button onClick={handleShopAll}>
-                  Shop All Products
+                <Button onClick={handleShopAll} className="shadow-sm">
+                  Browse Products
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {cartItems.map((item) => (
+              <div className="space-y-3">
+                {cartItems.map((item, index) => (
                   <div
                     key={item.id}
-                    className="flex gap-4 p-4 border rounded-lg relative group"
+                    className="flex gap-3 p-3 bg-muted/30 rounded-xl relative group animate-fade-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <img
                       src={item.products?.image_url}
                       alt={item.products?.name}
-                      className="w-20 h-20 object-cover rounded"
+                      className="w-16 h-16 object-cover rounded-lg"
                     />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate">
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <h4 className="font-medium text-sm truncate mb-0.5">
                         {item.products?.name}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground mb-1">
                         Qty: {item.quantity}
                       </p>
-                      <p className="font-semibold text-primary">
+                      <p className="font-semibold text-primary text-sm">
                         ${((item.products?.price || 0) * item.quantity).toFixed(2)}
                       </p>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => removeItem(item.id)}
                     >
                       <X className="h-4 w-4" />
@@ -233,20 +245,23 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
           </div>
 
           {cartItems.length > 0 && (
-            <div className="border-t pt-4 space-y-4">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total:</span>
-                <span className="text-primary">${total.toFixed(2)}</span>
+            <div className="border-t border-border/50 px-6 py-4 space-y-4 bg-muted/20">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-xl font-bold">${total.toFixed(2)}</span>
               </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Shipping calculated at checkout
+              </p>
 
               <div className="space-y-2">
-                <Button onClick={handleCheckout} className="w-full" size="lg">
-                  Checkout
+                <Button onClick={handleCheckout} className="w-full shadow-sm" size="lg">
+                  Proceed to Checkout
                 </Button>
                 <Button
                   onClick={handleShopAll}
-                  variant="outline"
-                  className="w-full"
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
                 >
                   Continue Shopping
                 </Button>

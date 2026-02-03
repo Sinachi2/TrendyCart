@@ -1,6 +1,6 @@
-import { ShoppingCart, Menu, X, LogOut, User, Package, Heart, LayoutDashboard } from "lucide-react";
+import { ShoppingCart, Menu, X, LogOut, Heart, LayoutDashboard, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/trendycart-logo.png";
 import { CartSidebar } from "@/components/CartSidebar";
 import NotificationBell from "@/components/NotificationBell";
+import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -23,8 +24,18 @@ const Navbar = () => {
   const [cartCount, setCartCount] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
-  const { user, isAdmin, signOut } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -82,42 +93,80 @@ const Navbar = () => {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "U";
   };
 
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "Shop", path: "/shop" },
+    { name: "About", path: "/about" },
+    { name: "Contact", path: "/contact" },
+  ];
+
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
+    <nav 
+      className={cn(
+        "sticky top-0 z-50 transition-all duration-300",
+        isScrolled 
+          ? "bg-background/95 backdrop-blur-xl shadow-sm border-b border-border/50" 
+          : "bg-background/80 backdrop-blur-md"
+      )}
+    >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 lg:h-18">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-            <img src={logo} alt="TrendyCart" className="h-10 w-auto" />
+          <Link 
+            to="/" 
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+          >
+            <img src={logo} alt="TrendyCart" className="h-9 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-foreground hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link to="/shop" className="text-foreground hover:text-primary transition-colors">
-              Shop
-            </Link>
-            <Link to="/about" className="text-foreground hover:text-primary transition-colors">
-              About
-            </Link>
-            <Link to="/contact" className="text-foreground hover:text-primary transition-colors">
-              Contact
-            </Link>
-            <Link to="/user-dashboard" className="text-foreground hover:text-primary transition-colors">
-              Dashboard
-            </Link>
+          <div className="hidden lg:flex items-center gap-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  isActive(link.path)
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                {link.name}
+              </Link>
+            ))}
+            {user && (
+              <Link
+                to="/user-dashboard"
+                className={cn(
+                  "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  isActive("/user-dashboard")
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+              >
+                Dashboard
+              </Link>
+            )}
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2">
             {user && <NotificationBell />}
-            <Button variant="ghost" size="icon" className="relative" onClick={() => setCartOpen(true)}>
+            
+            {/* Cart Button */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative hover:bg-muted/50" 
+              onClick={() => setCartOpen(true)}
+            >
               <ShoppingCart className="h-5 w-5" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {cartCount}
+                <span className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-scale-in">
+                  {cartCount > 99 ? "99+" : cartCount}
                 </span>
               )}
             </Button>
@@ -125,102 +174,118 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar className="h-8 w-8">
+                  <Button 
+                    variant="ghost" 
+                    className="gap-2 px-2 hover:bg-muted/50"
+                  >
+                    <Avatar className="h-8 w-8 ring-2 ring-border">
                       {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} />}
-                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
                         {getInitials(fullName)}
                       </AvatarFallback>
                     </Avatar>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{fullName || "User"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/user-dashboard")}>
+                  <DropdownMenuItem onClick={() => navigate("/user-dashboard")} className="cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     My Dashboard
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/wishlist")}>
+                  <DropdownMenuItem onClick={() => navigate("/wishlist")} className="cursor-pointer">
                     <Heart className="mr-2 h-4 w-4" />
                     My Wishlist
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setCartOpen(true)}>
-                    <Package className="mr-2 h-4 w-4" />
+                  <DropdownMenuItem onClick={() => setCartOpen(true)} className="cursor-pointer">
+                    <ShoppingCart className="mr-2 h-4 w-4" />
                     My Cart
+                    {cartCount > 0 && (
+                      <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {cartCount}
+                      </span>
+                    )}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={signOut}>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild variant="default" size="sm" className="hidden md:inline-flex">
+              <Button asChild size="sm" className="hidden sm:inline-flex shadow-sm">
                 <Link to="/auth">Sign In</Link>
               </Button>
             )}
 
             {/* Mobile Menu Toggle */}
-            <button
-              className="md:hidden"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden hover:bg-muted/50"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               aria-label="Toggle menu"
             >
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+              {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           </div>
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-border">
-            <Link
-              to="/"
-              className="block text-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Home
-            </Link>
-            <Link
-              to="/shop"
-              className="block text-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Shop
-            </Link>
-            <Link
-              to="/about"
-              className="block text-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              About
-            </Link>
-            <Link
-              to="/contact"
-              className="block text-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Contact
-            </Link>
-            <Link
-              to="/dashboard"
-              className="block text-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
+        <div 
+          className={cn(
+            "lg:hidden overflow-hidden transition-all duration-300 ease-out",
+            isMenuOpen ? "max-h-96 opacity-100 pb-4" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="flex flex-col gap-1 pt-2 border-t border-border/50">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                className={cn(
+                  "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                  isActive(link.path)
+                    ? "text-primary bg-primary/10"
+                    : "text-foreground hover:bg-muted/50"
+                )}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {link.name}
+              </Link>
+            ))}
+            {user && (
+              <Link
+                to="/user-dashboard"
+                className={cn(
+                  "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
+                  isActive("/user-dashboard")
+                    ? "text-primary bg-primary/10"
+                    : "text-foreground hover:bg-muted/50"
+                )}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            )}
             {!user && (
               <Link
                 to="/auth"
-                className="block text-foreground hover:text-primary transition-colors"
+                className="px-4 py-3 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign In
               </Link>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       <CartSidebar open={cartOpen} onOpenChange={setCartOpen} />

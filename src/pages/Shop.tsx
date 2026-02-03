@@ -166,194 +166,226 @@ const Shop = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8 md:py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Shop All Products</h1>
-          <p className="text-muted-foreground text-lg">
+        <div className="mb-8 md:mb-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">Shop All Products</h1>
+          <p className="text-muted-foreground text-base md:text-lg">
             Browse our complete collection of premium products
           </p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col lg:flex-row gap-4 mb-8">
-          <SearchAutocomplete
-            value={searchQuery}
-            onChange={setSearchQuery}
-            placeholder="Search products..."
-          />
-          
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category === "all" ? "All Categories" : category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Filters - Simplified */}
+        <div className="flex flex-col gap-4 mb-6">
+          {/* Search and Primary Filters */}
+          <div className="flex flex-col lg:flex-row gap-3">
+            <div className="flex-1">
+              <SearchAutocomplete
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search products..."
+              />
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-44">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category === "all" ? "All Categories" : category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="price-low">Price: Low to High</SelectItem>
-              <SelectItem value="price-high">Price: High to Low</SelectItem>
-              <SelectItem value="popular">Popular</SelectItem>
-              <SelectItem value="rating">Highest Rated</SelectItem>
-              <SelectItem value="deals">Limited Time Deals</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Filter Toggles */}
-        <div className="flex flex-wrap gap-3 mb-4">
-          <button
-            onClick={() => setShowOnSale(!showOnSale)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              showOnSale
-                ? "bg-destructive text-destructive-foreground"
-                : "bg-muted hover:bg-muted/80"
-            }`}
-          >
-            🔥 On Sale
-          </button>
-          <button
-            onClick={() => setShowInStock(!showInStock)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              showInStock
-                ? "bg-green-600 text-white"
-                : "bg-muted hover:bg-muted/80"
-            }`}
-          >
-            ✓ In Stock Only
-          </button>
-        </div>
-
-        {/* Rating Filter */}
-        <div className="mb-4 p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium">Minimum Rating</span>
-            <span className="text-sm text-muted-foreground flex items-center gap-1">
-              {minRating > 0 ? (
-                <>
-                  {minRating}+ <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                </>
-              ) : (
-                "All ratings"
-              )}
-            </span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-44">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="popular">Popular</SelectItem>
+                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="deals">Limited Time Deals</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="flex gap-2">
-            {[0, 1, 2, 3, 4].map((rating) => (
-              <button
-                key={rating}
-                onClick={() => setMinRating(rating)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm transition-colors ${
-                  minRating === rating
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background border border-border hover:bg-muted"
-                }`}
-              >
-                {rating === 0 ? (
-                  "All"
-                ) : (
+
+          {/* Quick Filters */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowOnSale(!showOnSale)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                showOnSale
+                  ? "bg-destructive text-destructive-foreground shadow-sm"
+                  : "bg-muted/80 hover:bg-muted text-foreground"
+              }`}
+            >
+              🔥 On Sale
+            </button>
+            <button
+              onClick={() => setShowInStock(!showInStock)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                showInStock
+                  ? "bg-success text-success-foreground shadow-sm"
+                  : "bg-muted/80 hover:bg-muted text-foreground"
+              }`}
+            >
+              ✓ In Stock Only
+            </button>
+          </div>
+        </div>
+
+        {/* Advanced Filters - Collapsible Cards */}
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          {/* Rating Filter */}
+          <div className="p-4 bg-card border border-border/50 rounded-xl shadow-card">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium">Minimum Rating</span>
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                {minRating > 0 ? (
                   <>
-                    {rating}+ <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    {minRating}+ <Star className="h-3 w-3 fill-warning text-warning" />
                   </>
+                ) : (
+                  "All ratings"
                 )}
-              </button>
-            ))}
+              </span>
+            </div>
+            <div className="flex gap-1.5">
+              {[0, 1, 2, 3, 4].map((rating) => (
+                <button
+                  key={rating}
+                  onClick={() => setMinRating(rating)}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    minRating === rating
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted/50 border border-border hover:bg-muted"
+                  }`}
+                >
+                  {rating === 0 ? (
+                    "All"
+                  ) : (
+                    <>
+                      {rating}+ <Star className="h-3 w-3 fill-warning text-warning" />
+                    </>
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Price Range Filter */}
-        <div className="mb-8 p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium">Price Range</span>
-            <span className="text-sm text-muted-foreground">
-              ${priceRange[0]} - ${priceRange[1]}
-            </span>
+          {/* Price Range Filter */}
+          <div className="p-4 bg-card border border-border/50 rounded-xl shadow-card">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-medium">Price Range</span>
+              <span className="text-xs text-muted-foreground font-mono">
+                ${priceRange[0]} - ${priceRange[1]}
+              </span>
+            </div>
+            <Slider
+              value={priceRange}
+              onValueChange={(value) => setPriceRange(value as [number, number])}
+              max={maxPrice}
+              min={0}
+              step={10}
+              className="w-full"
+            />
           </div>
-          <Slider
-            value={priceRange}
-            onValueChange={(value) => setPriceRange(value as [number, number])}
-            max={maxPrice}
-            min={0}
-            step={10}
-            className="w-full"
-          />
         </div>
 
         {/* Results count */}
-        <p className="text-sm text-muted-foreground mb-4">
-          Showing {paginatedProducts.length} of {sortedProducts.length} products
-        </p>
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{paginatedProducts.length}</span> of{" "}
+            <span className="font-medium text-foreground">{sortedProducts.length}</span> products
+          </p>
+        </div>
 
         {/* Products Grid */}
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading products...</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-card border border-border/50 rounded-xl overflow-hidden animate-pulse">
+                <div className="h-56 sm:h-64 bg-muted" />
+                <div className="p-4 space-y-3">
+                  <div className="h-3 w-16 bg-muted rounded" />
+                  <div className="h-5 w-3/4 bg-muted rounded" />
+                  <div className="h-4 w-20 bg-muted rounded" />
+                  <div className="h-10 w-full bg-muted rounded-lg mt-4" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {paginatedProducts.map((product) => (
-                <ProductHoverCard
-                  key={product.id}
-                  name={product.name}
-                  price={product.price}
-                  originalPrice={product.original_price}
-                  description={product.description}
-                  category={product.category}
-                  stockQuantity={product.stock_quantity}
-                  averageRating={product.averageRating}
-                  reviewCount={product.reviewCount}
-                  image={product.image_url}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {paginatedProducts.map((product, index) => (
+                <div 
+                  key={product.id} 
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div>
-                    <ProductCard
-                      id={product.id}
-                      name={product.name}
-                      price={product.price}
-                      originalPrice={product.original_price}
-                      image={product.image_url}
-                      category={product.category}
-                      isNew={product.is_new}
-                      stockQuantity={product.stock_quantity}
-                      description={product.description}
-                      dealExpiresAt={product.deal_expires_at}
-                      isDealActive={product.is_deal_active}
-                      averageRating={product.averageRating}
-                      reviewCount={product.reviewCount}
-                      onQuickView={() => setQuickViewProduct(product)}
-                    />
-                  </div>
-                </ProductHoverCard>
+                  <ProductHoverCard
+                    name={product.name}
+                    price={product.price}
+                    originalPrice={product.original_price}
+                    description={product.description}
+                    category={product.category}
+                    stockQuantity={product.stock_quantity}
+                    averageRating={product.averageRating}
+                    reviewCount={product.reviewCount}
+                    image={product.image_url}
+                  >
+                    <div>
+                      <ProductCard
+                        id={product.id}
+                        name={product.name}
+                        price={product.price}
+                        originalPrice={product.original_price}
+                        image={product.image_url}
+                        category={product.category}
+                        isNew={product.is_new}
+                        stockQuantity={product.stock_quantity}
+                        description={product.description}
+                        dealExpiresAt={product.deal_expires_at}
+                        isDealActive={product.is_deal_active}
+                        averageRating={product.averageRating}
+                        reviewCount={product.reviewCount}
+                        onQuickView={() => setQuickViewProduct(product)}
+                      />
+                    </div>
+                  </ProductHoverCard>
+                </div>
               ))}
             </div>
 
             {paginatedProducts.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground text-lg">
-                  No products found. Try adjusting your filters.
+              <div className="text-center py-16">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-2xl">🔍</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No products found</h3>
+                <p className="text-muted-foreground">
+                  Try adjusting your filters or search query
                 </p>
               </div>
             )}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <Pagination className="mt-8">
-                <PaginationContent>
+              <Pagination className="mt-10">
+                <PaginationContent className="gap-1">
                   <PaginationItem>
                     <PaginationPrevious
                       onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                      className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      className={`${currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-muted"}`}
                     />
                   </PaginationItem>
                   
@@ -372,7 +404,7 @@ const Shop = () => {
                   <PaginationItem>
                     <PaginationNext
                       onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                      className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      className={`${currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer hover:bg-muted"}`}
                     />
                   </PaginationItem>
                 </PaginationContent>
