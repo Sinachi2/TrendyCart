@@ -11,6 +11,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { CheckoutItemsSidebar } from "./CheckoutItemsSidebar";
+import { CheckoutPaymentSidebar } from "./CheckoutPaymentSidebar";
 
 interface CartItem {
   id: string;
@@ -31,6 +33,10 @@ interface CartSidebarProps {
 export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showItemSelection, setShowItemSelection] = useState(false);
+  const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<CartItem[]>([]);
+  const [totalAmount, setTotalAmount] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -119,8 +125,31 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
   };
 
   const handleCheckout = () => {
-    onOpenChange(false);
-    navigate("/checkout");
+    onOpenChange(false); // Close cart sidebar
+    setShowItemSelection(true); // Open item selection sidebar
+  };
+
+  const handleItemsContinue = (items: CartItem[], total: number) => {
+    setSelectedItems(items);
+    setTotalAmount(total);
+    setShowItemSelection(false);
+    setShowPaymentMethod(true);
+  };
+
+  const handleBackToCart = () => {
+    setShowItemSelection(false);
+    onOpenChange(true); // Reopen cart sidebar
+  };
+
+  const handleBackToItems = () => {
+    setShowPaymentMethod(false);
+    setShowItemSelection(true);
+  };
+
+  const handleOrderComplete = (orderId: string) => {
+    setShowPaymentMethod(false);
+    loadCartItems(); // Refresh cart
+    navigate(`/order-confirmation/${orderId}`);
   };
 
   const handleShopAll = () => {
@@ -134,95 +163,117 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
   );
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col">
-        <SheetHeader>
-          <SheetTitle className="flex items-center justify-between">
-            <span>Shopping Cart ({cartItems.length})</span>
-            {cartItems.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAll}
-                disabled={loading}
-              >
-                Clear All
-              </Button>
-            )}
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="flex-1 overflow-y-auto py-4">
-          {cartItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center py-12">
-              <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
-              <p className="text-muted-foreground mb-6">
-                Add some products to get started
-              </p>
-              <Button onClick={handleShopAll}>
-                Shop All Products
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex gap-4 p-4 border rounded-lg relative group"
+    <>
+      {/* Main Cart Sidebar */}
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent className="w-full sm:max-w-lg flex flex-col">
+          <SheetHeader>
+            <SheetTitle className="flex items-center justify-between">
+              <span>Shopping Cart ({cartItems.length})</span>
+              {cartItems.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAll}
+                  disabled={loading}
                 >
-                  <img
-                    src={item.products?.image_url}
-                    alt={item.products?.name}
-                    className="w-20 h-20 object-cover rounded"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium truncate">
-                      {item.products?.name}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Qty: {item.quantity}
-                    </p>
-                    <p className="font-semibold text-primary">
-                      ${((item.products?.price || 0) * item.quantity).toFixed(2)}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2"
-                    onClick={() => removeItem(item.id)}
+                  Clear All
+                </Button>
+              )}
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto py-4">
+            {cartItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                <ShoppingBag className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
+                <p className="text-muted-foreground mb-6">
+                  Add some products to get started
+                </p>
+                <Button onClick={handleShopAll}>
+                  Shop All Products
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex gap-4 p-4 border rounded-lg relative group"
                   >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                    <img
+                      src={item.products?.image_url}
+                      alt={item.products?.name}
+                      className="w-20 h-20 object-cover rounded"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium truncate">
+                        {item.products?.name}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        Qty: {item.quantity}
+                      </p>
+                      <p className="font-semibold text-primary">
+                        ${((item.products?.price || 0) * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={() => removeItem(item.id)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {cartItems.length > 0 && (
+            <div className="border-t pt-4 space-y-4">
+              <div className="flex justify-between items-center text-lg font-bold">
+                <span>Total:</span>
+                <span className="text-primary">${total.toFixed(2)}</span>
+              </div>
+
+              <div className="space-y-2">
+                <Button onClick={handleCheckout} className="w-full" size="lg">
+                  Checkout
+                </Button>
+                <Button
+                  onClick={handleShopAll}
+                  variant="outline"
+                  className="w-full"
+                >
+                  Continue Shopping
+                </Button>
+              </div>
             </div>
           )}
-        </div>
+        </SheetContent>
+      </Sheet>
 
-        {cartItems.length > 0 && (
-          <div className="border-t pt-4 space-y-4">
-            <div className="flex justify-between items-center text-lg font-bold">
-              <span>Total:</span>
-              <span className="text-primary">${total.toFixed(2)}</span>
-            </div>
+      {/* Checkout Item Selection Sidebar */}
+      <CheckoutItemsSidebar
+        open={showItemSelection}
+        onOpenChange={setShowItemSelection}
+        cartItems={cartItems}
+        onContinue={handleItemsContinue}
+        onBack={handleBackToCart}
+      />
 
-            <div className="space-y-2">
-              <Button onClick={handleCheckout} className="w-full" size="lg">
-                Checkout
-              </Button>
-              <Button
-                onClick={handleShopAll}
-                variant="outline"
-                className="w-full"
-              >
-                Continue Shopping
-              </Button>
-            </div>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+      {/* Checkout Payment Sidebar */}
+      <CheckoutPaymentSidebar
+        open={showPaymentMethod}
+        onOpenChange={setShowPaymentMethod}
+        selectedItems={selectedItems}
+        totalAmount={totalAmount}
+        onBack={handleBackToItems}
+        onOrderComplete={handleOrderComplete}
+      />
+    </>
   );
 };
