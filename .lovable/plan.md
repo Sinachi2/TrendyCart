@@ -1,152 +1,213 @@
 
 
-# Improved Step-Based Checkout Flow
+# Multi-Step Sidebar Checkout Flow
 
-This plan redesigns the checkout experience with a modern, step-based flow that gives users full control over what they pay for and how they pay.
+This plan implements a premium, modern checkout experience using slide-in sidebars that flow seamlessly from the cart, eliminating full-page redirects and keeping users engaged.
 
 ---
 
 ## Overview
 
-The new checkout flow will guide users through 4 clear steps:
+When users click "Checkout" from the cart sidebar, instead of navigating to `/checkout`, a new multi-step sidebar flow begins:
 
 ```text
-Step 1: Select Items → Step 2: Shipping Address → Step 3: Payment Method → Step 4: Confirm & Pay
+Cart Sidebar → Item Selection Sidebar → Payment Method Sidebar → Confirmation
 ```
 
 ---
 
 ## Current State
 
-The existing checkout:
-- Redirects to `/checkout` with ALL cart items pre-selected
-- Shipping and payment options are shown simultaneously
-- Users cannot choose which specific items to checkout
-- No step-based progression
+The existing flow:
+- Cart sidebar opens from the navbar
+- "Checkout" button navigates to `/checkout` (full-page)
+- Multi-step process happens on a separate page
 
----
+## New Flow
 
-## New User Experience
-
-### Step 1: Select Items to Purchase
-- Display all cart items with checkboxes
-- "Select All" toggle at the top
-- Real-time price updates as items are selected/deselected
-- Show item images, names, quantities, and individual prices
-- Minimum 1 item required to proceed
-- "Continue" button to move to next step
-
-### Step 2: Shipping Address
-- Show saved addresses (if any) as selectable cards
-- Option to enter a new address
-- Form validation before proceeding
-- Summary of selected items shown on the side
-- "Back" button to return to item selection
-
-### Step 3: Choose Payment Method
-- Clear cards for Bank Transfer and Cryptocurrency
-- Show payment details only after selection
-- Copy-to-clipboard buttons for account/wallet info
-- Transaction reference input (optional)
-- Visual confirmation of selected method
-
-### Step 4: Review & Submit Payment Proof
-- Full order summary (items, shipping, payment method)
-- Upload payment proof (image/PDF)
-- Preview uploaded file
-- Clear "Submit Order" button
-- Success confirmation with order ID
+- Cart sidebar opens from navbar
+- "Checkout" button opens **Item Selection Sidebar** (cart sidebar closes)
+- User selects items → opens **Payment Method Sidebar**
+- User selects payment → shows payment details and confirms
+- All within sidebars - no page navigation required
 
 ---
 
 ## Component Architecture
 
-### New Component: `CheckoutStepper.tsx`
-A visual step indicator showing progress through the checkout:
-- Step numbers with labels
-- Active/completed/upcoming states
-- Smooth transitions between steps
+### New Components
 
-### Modified Component: `Checkout.tsx`
-Complete refactor with:
-- `checkoutStep` state (1-4)
-- `selectedItems` state (Set of cart item IDs)
-- `paymentMethod` state
-- Conditional rendering based on current step
-- Step navigation functions
+**1. `CheckoutItemsSidebar.tsx`**
+A sidebar for selecting which items to purchase:
+- Displays all cart items with checkboxes
+- "Select All" toggle
+- Real-time price calculation
+- "Continue" button to open payment sidebar
+
+**2. `CheckoutPaymentSidebar.tsx`**
+A sidebar for payment method selection:
+- Two premium cards: Bank Transfer / Cryptocurrency
+- Payment details with copy-to-clipboard
+- Transaction reference input
+- Payment proof upload
+- "Submit Order" button
 
 ---
 
-## Step-by-Step Implementation
+## Detailed Component Design
 
-### 1. Create Checkout Stepper Component
-New file: `src/components/CheckoutStepper.tsx`
-- Props: `currentStep`, `steps` array
-- Visual progress indicator
-- Clickable steps to go back (not forward)
+### CheckoutItemsSidebar
 
-### 2. Refactor Checkout Page
-Modify: `src/pages/Checkout.tsx`
+**Props:**
+- `open: boolean`
+- `onOpenChange: (open: boolean) => void`
+- `cartItems: CartItem[]`
+- `onContinue: (selectedItems: CartItem[], total: number) => void`
 
-**New State Variables:**
+**Features:**
+- Header: "Select Items to Pay For"
+- Select All / Deselect All toggle with item count
+- Scrollable list of items with:
+  - Checkbox
+  - Product image
+  - Product name
+  - Quantity
+  - Individual price
+- Dynamic total calculation at bottom
+- "Continue to Payment" button (disabled if no items selected)
+- Smooth slide-in animation from right
+
+### CheckoutPaymentSidebar
+
+**Props:**
+- `open: boolean`
+- `onOpenChange: (open: boolean) => void`
+- `selectedItems: CartItem[]`
+- `totalAmount: number`
+- `onOrderComplete: (orderId: string) => void`
+
+**Features:**
+- Header: "Choose Payment Method"
+- Back button to return to item selection
+- Two payment method cards:
+  - **Bank Transfer Card**
+    - Icon and label
+    - Bank details (Fidelity Bank)
+    - Account name & number with copy buttons
+  - **Cryptocurrency Card**
+    - Icon and label  
+    - Network: USDT (BEP20)
+    - Wallet address with copy button
+- Selected method highlighted with border
+- Transaction reference input
+- Payment proof upload section:
+  - File input with preview
+  - Supported formats: JPG, PNG, WebP, PDF
+  - Max 5MB validation
+- Order summary collapse/expand
+- "Submit Order" button
+- Success state with order ID
+
+---
+
+## Modified Components
+
+### CartSidebar.tsx
+
+Update the checkout flow:
+- Remove `navigate("/checkout")`
+- Add state: `showItemSelection: boolean`
+- "Checkout" button now:
+  - Closes cart sidebar
+  - Opens CheckoutItemsSidebar
+- Pass cart items to the new sidebar
+
+---
+
+## State Flow
+
+```text
+1. User opens cart → CartSidebar visible
+2. User clicks "Checkout" → CartSidebar closes, CheckoutItemsSidebar opens
+3. User selects items, clicks "Continue" → CheckoutItemsSidebar closes, CheckoutPaymentSidebar opens
+4. User selects payment, uploads proof, clicks "Submit" → Order created
+5. Success state shown → User can close or view order
 ```
-checkoutStep: number (1-4)
-selectedItemIds: Set<string>
-paymentMethod: "bank_transfer" | "crypto" | null
-```
-
-**Step 1 Component - Item Selection:**
-- Checkbox list of cart items
-- "Select All" / "Deselect All" toggle
-- Dynamic total calculation
-- Disabled continue if no items selected
-
-**Step 2 Component - Shipping (existing logic):**
-- Saved address selection
-- New address form
-- Form validation
-
-**Step 3 Component - Payment Selection:**
-- Two large selection cards
-- Bank Transfer card with details
-- Crypto card with wallet info
-- Copy buttons for details
-- Selection required to continue
-
-**Step 4 Component - Review & Upload:**
-- Order summary recap
-- Payment proof upload (reuse PaymentProofUpload component logic)
-- Final submission
-
-### 3. Update Cart Integration
-- "Checkout" from cart now goes to step 1 (not directly to shipping)
-- Selected items persist in checkout state
-- Unselected items remain in cart
 
 ---
 
 ## UI/UX Details
 
-### Step Progress Indicator
+### Visual Design
+- Sidebars slide in from the right
+- Consistent width: `sm:max-w-lg` (same as cart)
+- Overlay background with blur effect
+- Smooth transitions between sidebars (300ms ease)
+
+### Step Indicator
+Inside each sidebar, show current position:
 ```text
-┌─────────────────────────────────────────────────────────┐
-│  (1)        (2)         (3)          (4)               │
-│   ●────────○──────────○────────────○                   │
-│ Select   Shipping    Payment     Confirm               │
-│ Items    Address     Method                            │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────┐
+│  ● Select Items             │
+│  ○ Payment Method           │
+└─────────────────────────────┘
 ```
 
-### Mobile Responsiveness
-- Steps stack vertically on small screens
-- Full-width buttons
-- Collapsible order summary
-- Touch-friendly checkboxes
+### Mobile Experience
+- Full-width sidebars on mobile
+- Touch-friendly checkboxes and buttons
+- Sticky footer with action button
+- Smooth gesture support for closing
 
-### Animations
-- Smooth slide transitions between steps
-- Fade in/out for content changes
-- Progress bar animation
+### Premium Feel
+- Subtle shadows and borders
+- Glassmorphism effects on cards
+- Animated checkmarks on selection
+- Loading states with spinners
+- Success celebration animation
+
+---
+
+## Payment Details Display
+
+### Bank Transfer
+```text
+┌─────────────────────────────────────┐
+│ 🏦 Bank Transfer                    │
+├─────────────────────────────────────┤
+│ Bank:           Fidelity Bank       │
+│ Account Name:   SINACHI FRANKLIN... │ [📋]
+│ Account Number: 6152779644          │ [📋]
+└─────────────────────────────────────┘
+```
+
+### Cryptocurrency
+```text
+┌─────────────────────────────────────┐
+│ ₿ Cryptocurrency                    │
+├─────────────────────────────────────┤
+│ Network: USDT (BEP20)               │
+│ Wallet Address:                     │
+│ 0x689dc021f5b7ed12883a...           │ [📋]
+└─────────────────────────────────────┘
+```
+
+---
+
+## Order Creation Flow
+
+When user clicks "Submit Order":
+
+1. Validate all required fields
+2. Create order in `orders` table with selected items total
+3. Create `order_items` for selected items only
+4. Upload payment proof to `payment-proofs` storage bucket
+5. Create `payment_proofs` record with pending status
+6. Remove selected items from cart (keep unselected)
+7. Trigger `cartUpdated` event
+8. Send confirmation email via edge function
+9. Show success state with order ID
+10. Option to close sidebar or view order
 
 ---
 
@@ -154,57 +215,71 @@ paymentMethod: "bank_transfer" | "crypto" | null
 
 | Scenario | Behavior |
 |----------|----------|
-| No items selected | Disable "Continue", show helper text |
-| Invalid address | Show field errors, prevent progression |
-| No payment method selected | Disable "Continue" button |
-| No proof uploaded | Show error toast, prevent submission |
+| No items selected | Disable "Continue" button |
+| No payment method | Disable "Submit" button |
+| No proof uploaded | Show error, prevent submission |
 | Network error | Toast notification, retain form state |
+| Storage upload fails | Show retry option |
 
 ---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/CheckoutItemsSidebar.tsx` | Item selection sidebar |
+| `src/components/CheckoutPaymentSidebar.tsx` | Payment method sidebar |
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/pages/Checkout.tsx` | Complete refactor with step-based flow |
-| `src/components/CheckoutStepper.tsx` | **New file** - Step indicator |
+| `src/components/CartSidebar.tsx` | Add checkout sidebar state management |
 
 ---
 
-## Technical Details
+## Technical Implementation
 
-### State Management
-- All checkout state managed in `Checkout.tsx`
-- No need for context - single page flow
-- Local storage backup for recovery (optional enhancement)
+### CartSidebar State Management
 
-### Order Creation Flow
-1. User completes all 4 steps
-2. Create order with only SELECTED items
-3. Create order_items for selected items only
-4. Remove ONLY selected items from cart (unselected stay)
-5. Upload payment proof to storage
-6. Create payment_proof record
-7. Redirect to order confirmation
+```typescript
+// Add to CartSidebar.tsx
+const [showItemSelection, setShowItemSelection] = useState(false);
+const [showPaymentMethod, setShowPaymentMethod] = useState(false);
+const [selectedItems, setSelectedItems] = useState<CartItem[]>([]);
+const [totalAmount, setTotalAmount] = useState(0);
 
-### Price Calculations
+const handleCheckout = () => {
+  onOpenChange(false); // Close cart
+  setShowItemSelection(true); // Open item selection
+};
+
+const handleItemsContinue = (items: CartItem[], total: number) => {
+  setSelectedItems(items);
+  setTotalAmount(total);
+  setShowItemSelection(false);
+  setShowPaymentMethod(true);
+};
+
+const handleOrderComplete = (orderId: string) => {
+  loadCartItems(); // Refresh cart
+  toast({ title: "Order placed!", description: "..." });
+  navigate(`/order-confirmation/${orderId}`);
+};
 ```
-selectedSubtotal = sum of (price × quantity) for selected items
-shipping = selectedSubtotal > 50 ? 0 : 9.99
-discount = applied coupon discount
-total = selectedSubtotal + shipping - discount
-```
+
+### Smooth Transitions
+- Use CSS transitions for sidebar open/close
+- Stagger animations when switching between sidebars
+- Fade overlay between transitions
 
 ---
 
 ## Implementation Order
 
-1. Create `CheckoutStepper.tsx` component
-2. Refactor `Checkout.tsx` with step state and navigation
-3. Implement Step 1 (Item Selection)
-4. Update Step 2 (Shipping - mostly existing code)
-5. Implement Step 3 (Payment Method Selection)
-6. Implement Step 4 (Review & Upload Proof)
-7. Update order creation logic for partial cart checkout
-8. Test complete flow on desktop and mobile
+1. Create `CheckoutItemsSidebar.tsx` component
+2. Create `CheckoutPaymentSidebar.tsx` component
+3. Update `CartSidebar.tsx` to manage the sidebar flow
+4. Add smooth transitions and animations
+5. Test on mobile and desktop
 
