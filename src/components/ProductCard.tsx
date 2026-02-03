@@ -1,4 +1,4 @@
-import { ShoppingCart, Heart, Eye, GitCompareArrows, Star, Clock } from "lucide-react";
+import { ShoppingCart, Heart, Eye, GitCompareArrows, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
 import CountdownTimer from "@/components/CountdownTimer";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   id: string;
@@ -49,6 +50,7 @@ const ProductCard = ({
   const { addToCompare, removeFromCompare, isInCompare } = useProductCompare();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const handleToggleCompare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -151,7 +153,9 @@ const ProductCard = ({
     }
   };
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
     if (!user) {
       toast({
         title: "Please sign in",
@@ -170,6 +174,7 @@ const ProductCard = ({
       return;
     }
 
+    setIsAddingToCart(true);
     try {
       const { error } = await supabase
         .from("cart_items")
@@ -196,48 +201,61 @@ const ProductCard = ({
         description: "Failed to add item to cart",
         variant: "destructive",
       });
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
   const getStockStatus = () => {
     if (stockQuantity === null || stockQuantity === undefined) return null;
-    if (stockQuantity <= 0) return { label: "Out of Stock", color: "bg-destructive text-destructive-foreground" };
-    if (stockQuantity <= 5) return { label: `Only ${stockQuantity} left`, color: "bg-orange-500 text-white" };
-    return { label: "In Stock", color: "bg-green-500 text-white" };
+    if (stockQuantity <= 0) return { label: "Out of Stock", variant: "destructive" as const };
+    if (stockQuantity <= 5) return { label: `Only ${stockQuantity} left`, variant: "warning" as const };
+    return { label: "In Stock", variant: "success" as const };
   };
 
   const stockStatus = getStockStatus();
   const isOutOfStock = stockQuantity !== null && stockQuantity <= 0;
+  const discountPercent = originalPrice && originalPrice > price 
+    ? Math.round(((originalPrice - price) / originalPrice) * 100) 
+    : 0;
   
-  // Check if deal has expired
   const isDealExpired = dealExpiresAt ? new Date(dealExpiresAt) <= new Date() : false;
   const showDealTimer = isDealActive && dealExpiresAt && !isDealExpired;
 
   return (
-    <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300 cursor-pointer" onClick={() => navigate(`/product/${id}`)}>
-      <div className="relative overflow-hidden bg-muted">
+    <Card 
+      className={cn(
+        "group overflow-hidden bg-card border-border/50 hover-lift cursor-pointer",
+        "transition-all duration-300"
+      )} 
+      onClick={() => navigate(`/product/${id}`)}
+    >
+      <div className="relative overflow-hidden bg-muted/50">
         <img
           src={image || "/placeholder.svg"}
           alt={name}
-          className={`w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500 ${isOutOfStock ? "opacity-50" : ""}`}
+          className={cn(
+            "w-full h-56 sm:h-64 object-cover transition-transform duration-500",
+            "group-hover:scale-105",
+            isOutOfStock && "opacity-60 grayscale-[30%]"
+          )}
         />
-        <div className="absolute top-3 left-3 flex flex-col gap-2">
+        
+        {/* Badges - Top Left */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {isNew && (
-            <Badge className="bg-accent text-accent-foreground">
+            <Badge className="bg-accent text-accent-foreground shadow-sm">
               New
             </Badge>
           )}
-          {originalPrice && originalPrice > price && (
-            <Badge className="bg-destructive text-destructive-foreground">
-              -{Math.round(((originalPrice - price) / originalPrice) * 100)}%
-            </Badge>
-          )}
-          {stockStatus && (
-            <Badge className={stockStatus.color}>
-              {stockStatus.label}
+          {discountPercent > 0 && (
+            <Badge className="bg-destructive text-destructive-foreground shadow-sm">
+              -{discountPercent}%
             </Badge>
           )}
         </div>
+
+        {/* Deal Timer */}
         {showDealTimer && (
           <div className="absolute bottom-3 left-3">
             <CountdownTimer
@@ -247,25 +265,28 @@ const ProductCard = ({
             />
           </div>
         )}
-        <div className="absolute top-3 right-3 flex flex-col gap-2">
+
+        {/* Action Buttons - Top Right */}
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5">
           <Button
             size="icon"
             variant="secondary"
-            className={`transition-all ${
+            className={cn(
+              "h-9 w-9 rounded-full shadow-sm transition-all duration-200",
               isWishlisted 
-                ? "opacity-100 bg-red-500 hover:bg-red-600 text-white" 
-                : "opacity-0 group-hover:opacity-100"
-            }`}
+                ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground opacity-100" 
+                : "opacity-0 group-hover:opacity-100 bg-background/90 hover:bg-background"
+            )}
             onClick={handleToggleWishlist}
             disabled={wishlistLoading}
           >
-            <Heart className={`h-4 w-4 ${isWishlisted ? "fill-current" : ""}`} />
+            <Heart className={cn("h-4 w-4", isWishlisted && "fill-current")} />
           </Button>
           {onQuickView && (
             <Button
               size="icon"
               variant="secondary"
-              className="opacity-0 group-hover:opacity-100 transition-all"
+              className="h-9 w-9 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 bg-background/90 hover:bg-background"
               onClick={(e) => {
                 e.stopPropagation();
                 onQuickView();
@@ -277,34 +298,56 @@ const ProductCard = ({
           <Button
             size="icon"
             variant="secondary"
-            className={`transition-all ${
+            className={cn(
+              "h-9 w-9 rounded-full shadow-sm transition-all duration-200",
               isInCompare(id)
-                ? "opacity-100 bg-primary hover:bg-primary/90 text-primary-foreground"
-                : "opacity-0 group-hover:opacity-100"
-            }`}
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground opacity-100"
+                : "opacity-0 group-hover:opacity-100 bg-background/90 hover:bg-background"
+            )}
             onClick={handleToggleCompare}
           >
             <GitCompareArrows className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Stock Status - Bottom Right */}
+        {stockStatus && (
+          <div className="absolute bottom-3 right-3">
+            <Badge 
+              variant={stockStatus.variant === "success" ? "default" : stockStatus.variant === "warning" ? "secondary" : "destructive"}
+              className={cn(
+                "text-xs shadow-sm",
+                stockStatus.variant === "success" && "bg-success text-success-foreground",
+                stockStatus.variant === "warning" && "bg-warning text-warning-foreground"
+              )}
+            >
+              {stockStatus.label}
+            </Badge>
+          </div>
+        )}
       </div>
       
       <CardContent className="p-4">
-        <p className="text-sm text-muted-foreground mb-1">{category}</p>
-        <h3 className="font-semibold text-lg mb-2 line-clamp-1">{name}</h3>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+          {category}
+        </p>
+        <h3 className="font-semibold text-base mb-2 line-clamp-1 group-hover:text-primary transition-colors">
+          {name}
+        </h3>
         
-        {/* Rating display */}
+        {/* Rating */}
         {reviewCount > 0 && (
-          <div className="flex items-center gap-1 mb-2">
+          <div className="flex items-center gap-1.5 mb-3">
             <div className="flex items-center">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star
                   key={star}
-                  className={`h-3 w-3 ${
+                  className={cn(
+                    "h-3.5 w-3.5",
                     star <= Math.round(averageRating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-muted-foreground"
-                  }`}
+                      ? "fill-warning text-warning"
+                      : "text-muted-foreground/30"
+                  )}
                 />
               ))}
             </div>
@@ -312,11 +355,12 @@ const ProductCard = ({
           </div>
         )}
         
-        <div className="flex items-center gap-2">
-          <span className="text-xl font-bold text-primary">${price}</span>
-          {originalPrice && (
+        {/* Price */}
+        <div className="flex items-baseline gap-2">
+          <span className="text-xl font-bold text-primary">${price.toFixed(2)}</span>
+          {originalPrice && originalPrice > price && (
             <span className="text-sm text-muted-foreground line-through">
-              ${originalPrice}
+              ${originalPrice.toFixed(2)}
             </span>
           )}
         </div>
@@ -324,15 +368,15 @@ const ProductCard = ({
       
       <CardFooter className="p-4 pt-0">
         <Button 
-          onClick={(e) => {
-            e.stopPropagation();
-            handleAddToCart();
-          }} 
-          className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors"
-          disabled={isOutOfStock}
+          onClick={handleAddToCart}
+          className={cn(
+            "w-full transition-all duration-200",
+            !isOutOfStock && "hover:shadow-md"
+          )}
+          disabled={isOutOfStock || isAddingToCart}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
-          {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+          {isOutOfStock ? "Out of Stock" : isAddingToCart ? "Adding..." : "Add to Cart"}
         </Button>
       </CardFooter>
     </Card>
