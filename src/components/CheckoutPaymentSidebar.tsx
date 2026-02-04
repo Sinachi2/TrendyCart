@@ -223,11 +223,33 @@ export const CheckoutPaymentSidebar = ({
       // 6. Trigger cart update event
       window.dispatchEvent(new Event("cartUpdated"));
 
-      // 7. Show success state
+      // 7. Send order notification email
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .single();
+
+        await supabase.functions.invoke("send-order-email", {
+          body: {
+            orderId: order.id,
+            customerName: profile?.full_name || "Customer",
+            customerEmail: profile?.email || user.email,
+            items: orderItems,
+            totalAmount,
+            paymentMethod,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send order email:", emailError);
+      }
+
+      // 8. Show success state
       setOrderSuccess(order.id);
 
       toast({
-        title: "Order submitted!",
+        title: "🎉 Order submitted!",
         description: "Your payment proof is being reviewed",
       });
     } catch (error) {
@@ -260,30 +282,33 @@ export const CheckoutPaymentSidebar = ({
 
   const canSubmit = paymentMethod && proofFile && !loading;
 
-  // Success State
+  // Success State with Reverse & Dashboard options
   if (orderSuccess) {
     return (
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col items-center justify-center">
           <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto animate-scale-in">
               <CheckCircle2 className="w-10 h-10 text-green-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-2">Order Submitted!</h2>
+              <h2 className="text-2xl font-bold mb-2">🎉 Order Submitted!</h2>
               <p className="text-muted-foreground">
-                Your order #{orderSuccess.slice(0, 8)} has been placed.
+                Your order #{orderSuccess.slice(0, 8).toUpperCase()} has been placed.
               </p>
               <p className="text-muted-foreground mt-2">
                 We'll notify you once your payment is verified.
               </p>
             </div>
             <div className="space-y-2 w-full max-w-xs">
-              <Button onClick={handleViewOrder} className="w-full">
+              <Button onClick={() => { onOpenChange(false); navigate("/user-dashboard"); }} className="w-full">
+                Go to Dashboard
+              </Button>
+              <Button onClick={handleViewOrder} variant="outline" className="w-full">
                 View Order Details
               </Button>
-              <Button onClick={handleClose} variant="outline" className="w-full">
-                Continue Shopping
+              <Button onClick={() => { onOpenChange(false); navigate("/user-dashboard/orders"); }} variant="ghost" className="w-full text-muted-foreground">
+                Reverse Purchase (within 24h)
               </Button>
             </div>
           </div>
