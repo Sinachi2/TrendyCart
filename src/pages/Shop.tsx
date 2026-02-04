@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import ProductQuickView from "@/components/ProductQuickView";
 import ProductHoverCard from "@/components/ProductHoverCard";
@@ -420,6 +421,8 @@ const Shop = () => {
         open={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}
       />
+
+      <Footer />
     </div>
   );
 };

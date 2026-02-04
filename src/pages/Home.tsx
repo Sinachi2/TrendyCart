@@ -2,6 +2,7 @@ import { ArrowRight, Truck, Shield, Headphones, Sparkles, Star, Zap } from "luci
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import DealsSection from "@/components/DealsSection";
 
@@ -156,8 +157,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer spacer */}
-      <div className="h-8 bg-background" />
+      <Footer />
     </div>
   );
 };

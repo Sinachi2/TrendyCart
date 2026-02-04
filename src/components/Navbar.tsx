@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/trendycart-logo.png";
 import { CartSidebar } from "@/components/CartSidebar";
 import NotificationBell from "@/components/NotificationBell";
+import ThemeToggle from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 const Navbar = () => {
@@ -153,7 +154,8 @@ const Navbar = () => {
           </div>
 
           {/* User Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeToggle />
             {user && <NotificationBell />}
             
             {/* Cart Button */}
