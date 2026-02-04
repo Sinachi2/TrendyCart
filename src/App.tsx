@@ -23,6 +23,10 @@ import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
 import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
+import DashboardUserOrders from "./pages/DashboardUserOrders";
+import DashboardUserPayments from "./pages/DashboardUserPayments";
+import DashboardNotifications from "./pages/DashboardNotifications";
+import DashboardUserProfile from "./pages/DashboardUserProfile";
 import Compare from "./pages/Compare";
 import DashboardCoupons from "./pages/DashboardCoupons";
 import SharedWishlist from "./pages/SharedWishlist";
@@ -54,6 +58,10 @@ const App = () => (
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/wishlist/shared/:userId" element={<SharedWishlist />} />
               <Route path="/user-dashboard" element={<UserDashboard />} />
+              <Route path="/user-dashboard/orders" element={<DashboardUserOrders />} />
+              <Route path="/user-dashboard/payments" element={<DashboardUserPayments />} />
+              <Route path="/user-dashboard/notifications" element={<DashboardNotifications />} />
+              <Route path="/user-dashboard/profile" element={<DashboardUserProfile />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
               <Route path="/about" element={<About />} />
