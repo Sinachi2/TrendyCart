@@ -34,12 +34,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Invalid email format");
     }
 
-    // Send to all three email addresses
-    const recipients = [
-      "trendycart96@gmail.com",
-      "ezeonyekasinachifranklin@gmail.com",
-      "ezeonyekasinachi@gmail.com",
-    ];
+    // NOTE: Resend free tier only allows sending to the account owner's email.
+    // To send to multiple recipients, verify a domain at https://resend.com/domains
+    const recipients = ["ezeonyekasinachifranklin@gmail.com"];
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

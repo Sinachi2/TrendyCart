@@ -36,11 +36,9 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Missing required fields");
     }
 
-    const recipients = [
-      "trendycart96@gmail.com",
-      "ezeonyekasinachifranklin@gmail.com",
-      "ezeonyekasinachi@gmail.com",
-    ];
+    // NOTE: Resend free tier only allows sending to the account owner's email.
+    // To send to multiple recipients, verify a domain at https://resend.com/domains
+    const recipients = ["ezeonyekasinachifranklin@gmail.com"];
 
     const paymentMethodLabel = paymentMethod === "bank_transfer" ? "Bank Transfer" : "Cryptocurrency (USDT)";
 
