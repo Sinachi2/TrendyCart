@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Upload, Check, Building2, Bitcoin, Copy, AlertCircle, Image, Loader2 } from "lucide-react";
+import { Upload, Check, Building2, Bitcoin, Copy, AlertCircle, Image, Loader2, Calendar, User, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,9 +37,34 @@ const PaymentProofUpload = ({ orderId, amount, onSuccess }: PaymentProofUploadPr
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [transactionRef, setTransactionRef] = useState("");
+  const [paymentDate, setPaymentDate] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!transactionRef.trim()) {
+      errors.transactionRef = "Required";
+    }
+    if (!paymentDate) {
+      errors.paymentDate = "Required";
+    }
+    if (!senderName.trim()) {
+      errors.senderName = "Required";
+    }
+    if (!proofFile) {
+      errors.proofFile = "Required";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -96,24 +123,43 @@ const PaymentProofUpload = ({ orderId, amount, onSuccess }: PaymentProofUploadPr
   };
 
   const handleSubmit = async () => {
-    if (!user || !proofFile) {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateForm()) {
       toast({
         title: "Missing information",
-        description: "Please upload your payment proof",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
     setUploading(true);
+    setUploadProgress(0);
+
     try {
-      // Upload file to storage
-      const fileExt = proofFile.name.split(".").pop();
+      // Upload file to storage with progress
+      setUploadProgress(10);
+      const fileExt = proofFile!.name.split(".").pop();
       const fileName = `${user.id}/${orderId}/${Date.now()}.${fileExt}`;
+
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => Math.min(prev + 15, 85));
+      }, 200);
 
       const { error: uploadError } = await supabase.storage
         .from("payment-proofs")
-        .upload(fileName, proofFile);
+        .upload(fileName, proofFile!);
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       if (uploadError) throw uploadError;
 
@@ -311,19 +357,94 @@ const PaymentProofUpload = ({ orderId, amount, onSuccess }: PaymentProofUploadPr
           </TabsContent>
         </Tabs>
 
-        <div className="space-y-2">
-          <Label>Transaction Reference (Optional)</Label>
-          <Input
-            placeholder="Enter transaction ID or reference"
-            value={transactionRef}
-            onChange={(e) => setTransactionRef(e.target.value)}
-          />
+        {/* Payment Details Section */}
+        <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+          <h4 className="font-semibold text-sm flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Payment Details
+          </h4>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              Transaction Reference / Hash *
+              {validationErrors.transactionRef && (
+                <span className="text-destructive text-xs ml-auto">{validationErrors.transactionRef}</span>
+              )}
+            </Label>
+            <Input
+              placeholder="Enter transaction ID or reference"
+              value={transactionRef}
+              onChange={(e) => {
+                setTransactionRef(e.target.value);
+                if (validationErrors.transactionRef) {
+                  setValidationErrors((prev) => ({ ...prev, transactionRef: "" }));
+                }
+              }}
+              className={validationErrors.transactionRef ? "border-destructive" : ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              <Calendar className="h-3.5 w-3.5" />
+              Payment Date *
+              {validationErrors.paymentDate && (
+                <span className="text-destructive text-xs ml-auto">{validationErrors.paymentDate}</span>
+              )}
+            </Label>
+            <Input
+              type="date"
+              value={paymentDate}
+              onChange={(e) => {
+                setPaymentDate(e.target.value);
+                if (validationErrors.paymentDate) {
+                  setValidationErrors((prev) => ({ ...prev, paymentDate: "" }));
+                }
+              }}
+              className={validationErrors.paymentDate ? "border-destructive" : ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="flex items-center gap-1">
+              <User className="h-3.5 w-3.5" />
+              Sender Name *
+              {validationErrors.senderName && (
+                <span className="text-destructive text-xs ml-auto">{validationErrors.senderName}</span>
+              )}
+            </Label>
+            <Input
+              placeholder="Name on the bank account or wallet"
+              value={senderName}
+              onChange={(e) => {
+                setSenderName(e.target.value);
+                if (validationErrors.senderName) {
+                  setValidationErrors((prev) => ({ ...prev, senderName: "" }));
+                }
+              }}
+              className={validationErrors.senderName ? "border-destructive" : ""}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Additional Notes (Optional)</Label>
+            <Textarea
+              placeholder="Any additional information about your payment..."
+              value={additionalNotes}
+              onChange={(e) => setAdditionalNotes(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             <Image className="h-4 w-4" />
             Upload Payment Proof *
+            {validationErrors.proofFile && (
+              <span className="text-destructive text-xs ml-auto">{validationErrors.proofFile}</span>
+            )}
           </Label>
           <p className="text-xs text-muted-foreground">
             Upload your receipt or transaction screenshot (JPG, PNG, WebP, PDF - Max 5MB)
@@ -332,6 +453,7 @@ const PaymentProofUpload = ({ orderId, amount, onSuccess }: PaymentProofUploadPr
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
             onChange={handleFileChange}
+            className={validationErrors.proofFile ? "border-destructive" : ""}
           />
           {previewUrl && (
             <div className="mt-2 border rounded-lg p-2">
@@ -348,19 +470,33 @@ const PaymentProofUpload = ({ orderId, amount, onSuccess }: PaymentProofUploadPr
               File selected: {proofFile.name}
             </p>
           )}
+          {uploading && uploadProgress > 0 && (
+            <div className="space-y-1 mt-2">
+              <Progress value={uploadProgress} className="h-2" />
+              <p className="text-xs text-muted-foreground text-center">
+                {uploadProgress < 100 ? `Uploading... ${uploadProgress}%` : "Upload complete!"}
+              </p>
+            </div>
+          )}
         </div>
 
         <Button
           onClick={handleSubmit}
-          disabled={!proofFile || uploading}
+          disabled={!proofFile || !transactionRef || !paymentDate || !senderName || uploading}
           className="w-full"
           size="lg"
         >
           {uploading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Submitting...
-            </>
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>
+                {uploadProgress > 0 && uploadProgress < 100
+                  ? `Uploading... ${uploadProgress}%`
+                  : uploadProgress === 100
+                  ? "Processing..."
+                  : "Submitting..."}
+              </span>
+            </div>
           ) : (
             <>
               <Upload className="h-4 w-4 mr-2" />
@@ -368,6 +504,12 @@ const PaymentProofUpload = ({ orderId, amount, onSuccess }: PaymentProofUploadPr
             </>
           )}
         </Button>
+        
+        {uploading && (
+          <p className="text-xs text-muted-foreground text-center animate-pulse">
+            Please wait while we process your submission...
+          </p>
+        )}
       </CardContent>
     </Card>
   );

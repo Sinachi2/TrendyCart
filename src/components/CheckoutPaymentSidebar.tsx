@@ -11,10 +11,15 @@ import {
   X,
   Loader2,
   CheckCircle2,
+  Calendar,
+  User,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
 import {
   Sheet,
   SheetContent,
@@ -73,15 +78,43 @@ export const CheckoutPaymentSidebar = ({
 }: CheckoutPaymentSidebarProps) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [transactionRef, setTransactionRef] = useState("");
+  const [paymentDate, setPaymentDate] = useState("");
+  const [senderName, setSenderName] = useState("");
+  const [additionalNotes, setAdditionalNotes] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [orderSuccess, setOrderSuccess] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    if (!paymentMethod) {
+      errors.paymentMethod = "Please select a payment method";
+    }
+    if (!transactionRef.trim()) {
+      errors.transactionRef = "Transaction reference is required";
+    }
+    if (!paymentDate) {
+      errors.paymentDate = "Payment date is required";
+    }
+    if (!senderName.trim()) {
+      errors.senderName = "Sender name is required";
+    }
+    if (!proofFile) {
+      errors.proofFile = "Payment proof is required";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const copyToClipboard = async (text: string, field: string) => {
     await navigator.clipboard.writeText(text);
@@ -141,16 +174,26 @@ export const CheckoutPaymentSidebar = ({
   };
 
   const handleSubmitOrder = async () => {
-    if (!user || !paymentMethod || !proofFile) {
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validateForm()) {
       toast({
         title: "Missing information",
-        description: "Please select a payment method and upload proof",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
 
     setLoading(true);
+    setUploadProgress(0);
 
     try {
       // 1. Create order
@@ -182,13 +225,22 @@ export const CheckoutPaymentSidebar = ({
 
       if (itemsError) throw itemsError;
 
-      // 3. Upload payment proof
-      const fileExt = proofFile.name.split(".").pop();
+      // 3. Upload payment proof with progress simulation
+      setUploadProgress(10);
+      const fileExt = proofFile!.name.split(".").pop();
       const fileName = `${user.id}/${order.id}_${Date.now()}.${fileExt}`;
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => Math.min(prev + 15, 85));
+      }, 200);
 
       const { error: uploadError } = await supabase.storage
         .from("payment-proofs")
-        .upload(fileName, proofFile);
+        .upload(fileName, proofFile!);
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
       if (uploadError) throw uploadError;
 
@@ -275,12 +327,17 @@ export const CheckoutPaymentSidebar = ({
     setOrderSuccess(null);
     setPaymentMethod(null);
     setTransactionRef("");
+    setPaymentDate("");
+    setSenderName("");
+    setAdditionalNotes("");
     setProofFile(null);
     setProofPreview(null);
+    setUploadProgress(0);
+    setValidationErrors({});
     onOpenChange(false);
   };
 
-  const canSubmit = paymentMethod && proofFile && !loading;
+  const canSubmit = paymentMethod && proofFile && transactionRef && paymentDate && senderName && !loading;
 
   // Success State with Reverse & Dashboard options
   if (orderSuccess) {
@@ -483,28 +540,107 @@ export const CheckoutPaymentSidebar = ({
             </div>
           </div>
 
-          {/* Transaction Reference */}
+          {/* Transaction Details - Required Fields */}
           {paymentMethod && (
-            <div className="space-y-2">
-              <Label htmlFor="transactionRef">
-                Transaction Reference (Optional)
-              </Label>
-              <Input
-                id="transactionRef"
-                placeholder="Enter your transaction reference"
-                value={transactionRef}
-                onChange={(e) => setTransactionRef(e.target.value)}
-              />
+            <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+              <h4 className="font-semibold text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Payment Details
+              </h4>
+              
+              <div className="space-y-2">
+                <Label htmlFor="transactionRef" className="flex items-center gap-1">
+                  Transaction Reference / Hash *
+                  {validationErrors.transactionRef && (
+                    <span className="text-destructive text-xs ml-auto">{validationErrors.transactionRef}</span>
+                  )}
+                </Label>
+                <Input
+                  id="transactionRef"
+                  placeholder="Enter your transaction reference or hash"
+                  value={transactionRef}
+                  onChange={(e) => {
+                    setTransactionRef(e.target.value);
+                    if (validationErrors.transactionRef) {
+                      setValidationErrors((prev) => ({ ...prev, transactionRef: "" }));
+                    }
+                  }}
+                  className={validationErrors.transactionRef ? "border-destructive" : ""}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paymentDate" className="flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5" />
+                  Payment Date *
+                  {validationErrors.paymentDate && (
+                    <span className="text-destructive text-xs ml-auto">{validationErrors.paymentDate}</span>
+                  )}
+                </Label>
+                <Input
+                  id="paymentDate"
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => {
+                    setPaymentDate(e.target.value);
+                    if (validationErrors.paymentDate) {
+                      setValidationErrors((prev) => ({ ...prev, paymentDate: "" }));
+                    }
+                  }}
+                  className={validationErrors.paymentDate ? "border-destructive" : ""}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="senderName" className="flex items-center gap-1">
+                  <User className="h-3.5 w-3.5" />
+                  Sender Name *
+                  {validationErrors.senderName && (
+                    <span className="text-destructive text-xs ml-auto">{validationErrors.senderName}</span>
+                  )}
+                </Label>
+                <Input
+                  id="senderName"
+                  placeholder="Name on the bank account or wallet"
+                  value={senderName}
+                  onChange={(e) => {
+                    setSenderName(e.target.value);
+                    if (validationErrors.senderName) {
+                      setValidationErrors((prev) => ({ ...prev, senderName: "" }));
+                    }
+                  }}
+                  className={validationErrors.senderName ? "border-destructive" : ""}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="additionalNotes">
+                  Additional Notes (Optional)
+                </Label>
+                <Textarea
+                  id="additionalNotes"
+                  placeholder="Any additional information about your payment..."
+                  value={additionalNotes}
+                  onChange={(e) => setAdditionalNotes(e.target.value)}
+                  rows={3}
+                  className="resize-none"
+                />
+              </div>
             </div>
           )}
 
           {/* Payment Proof Upload */}
           {paymentMethod && (
             <div className="space-y-2">
-              <Label>Payment Proof *</Label>
+              <Label className="flex items-center gap-1">
+                Payment Proof *
+                {validationErrors.proofFile && (
+                  <span className="text-destructive text-xs ml-auto">{validationErrors.proofFile}</span>
+                )}
+              </Label>
               <div
                 className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                  proofFile ? "border-primary bg-primary/5" : "border-border"
+                  proofFile ? "border-primary bg-primary/5" : validationErrors.proofFile ? "border-destructive" : "border-border"
                 }`}
               >
                 {proofFile ? (
@@ -531,6 +667,14 @@ export const CheckoutPaymentSidebar = ({
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
+                    {loading && uploadProgress > 0 && (
+                      <div className="space-y-1">
+                        <Progress value={uploadProgress} className="h-2" />
+                        <p className="text-xs text-muted-foreground">
+                          {uploadProgress < 100 ? "Uploading..." : "Upload complete!"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div
@@ -596,14 +740,28 @@ export const CheckoutPaymentSidebar = ({
             disabled={!canSubmit}
           >
             {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Submitting...
-              </>
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>
+                  {uploadProgress > 0 && uploadProgress < 100
+                    ? `Uploading... ${uploadProgress}%`
+                    : uploadProgress === 100
+                    ? "Processing order..."
+                    : "Submitting..."}
+                </span>
+              </div>
             ) : (
               "Submit Order"
             )}
           </Button>
+          
+          {loading && (
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground animate-pulse">
+                Please wait while we process your order...
+              </p>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
