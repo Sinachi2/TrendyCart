@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
-
+import { useLanguage } from "@/hooks/useLanguage";
 const getNotificationIcon = (type: string) => {
   switch (type) {
     case "payment_verified":
