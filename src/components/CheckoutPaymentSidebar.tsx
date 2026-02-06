@@ -14,6 +14,8 @@ import {
   Calendar,
   User,
   FileText,
+  DollarSign,
+  Coins,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +36,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface CartItem {
   id: string;
@@ -56,6 +59,7 @@ interface CheckoutPaymentSidebarProps {
 }
 
 type PaymentMethod = "bank_transfer" | "crypto" | null;
+type CurrencyType = "fiat" | "crypto" | null;
 
 const BANK_DETAILS = {
   bank: "Fidelity Bank",
@@ -68,6 +72,21 @@ const CRYPTO_DETAILS = {
   walletAddress: "0x689dc021f5b7ed12883a401addc45fff7f279c19",
 };
 
+const FIAT_CURRENCIES = [
+  { code: "NGN", name: "Nigerian Naira", symbol: "₦", flag: "🇳🇬" },
+  { code: "USD", name: "US Dollar", symbol: "$", flag: "🇺🇸" },
+  { code: "EUR", name: "Euro", symbol: "€", flag: "🇪🇺" },
+  { code: "GBP", name: "British Pound", symbol: "£", flag: "🇬🇧" },
+  { code: "GHS", name: "Ghanaian Cedi", symbol: "₵", flag: "🇬🇭" },
+  { code: "KES", name: "Kenyan Shilling", symbol: "KSh", flag: "🇰🇪" },
+];
+
+const CRYPTO_CURRENCIES = [
+  { code: "USDT", name: "Tether (USDT)", symbol: "₮", flag: "🪙" },
+  { code: "BTC", name: "Bitcoin", symbol: "₿", flag: "🪙" },
+  { code: "ETH", name: "Ethereum", symbol: "Ξ", flag: "🪙" },
+];
+
 export const CheckoutPaymentSidebar = ({
   open,
   onOpenChange,
@@ -76,6 +95,8 @@ export const CheckoutPaymentSidebar = ({
   onBack,
   onOrderComplete,
 }: CheckoutPaymentSidebarProps) => {
+  const [currencyType, setCurrencyType] = useState<CurrencyType>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [transactionRef, setTransactionRef] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
@@ -91,11 +112,15 @@ export const CheckoutPaymentSidebar = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {};
     
+    if (!selectedCurrency) {
+      errors.currency = t("checkout.currencyRequired");
+    }
     if (!paymentMethod) {
       errors.paymentMethod = "Please select a payment method";
     }
@@ -129,7 +154,6 @@ export const CheckoutPaymentSidebar = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -139,7 +163,6 @@ export const CheckoutPaymentSidebar = ({
         return;
       }
 
-      // Validate file type
       const validTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
       if (!validTypes.includes(file.type)) {
         toast({
@@ -152,7 +175,6 @@ export const CheckoutPaymentSidebar = ({
 
       setProofFile(file);
 
-      // Create preview for images
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -170,6 +192,17 @@ export const CheckoutPaymentSidebar = ({
     setProofPreview(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleCurrencyTypeSelect = (type: CurrencyType) => {
+    setCurrencyType(type);
+    setSelectedCurrency(null);
+    // Auto-set payment method based on currency type
+    if (type === "fiat") {
+      setPaymentMethod("bank_transfer");
+    } else if (type === "crypto") {
+      setPaymentMethod("crypto");
     }
   };
 
@@ -230,7 +263,6 @@ export const CheckoutPaymentSidebar = ({
       const fileExt = proofFile!.name.split(".").pop();
       const fileName = `${user.id}/${order.id}_${Date.now()}.${fileExt}`;
 
-      // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress((prev) => Math.min(prev + 15, 85));
       }, 200);
@@ -291,6 +323,7 @@ export const CheckoutPaymentSidebar = ({
             items: orderItems,
             totalAmount,
             paymentMethod,
+            currency: selectedCurrency,
           },
         });
       } catch (emailError) {
@@ -325,6 +358,8 @@ export const CheckoutPaymentSidebar = ({
 
   const handleClose = () => {
     setOrderSuccess(null);
+    setCurrencyType(null);
+    setSelectedCurrency(null);
     setPaymentMethod(null);
     setTransactionRef("");
     setPaymentDate("");
@@ -337,35 +372,35 @@ export const CheckoutPaymentSidebar = ({
     onOpenChange(false);
   };
 
-  const canSubmit = paymentMethod && proofFile && transactionRef && paymentDate && senderName && !loading;
+  const canSubmit = paymentMethod && selectedCurrency && proofFile && transactionRef && paymentDate && senderName && !loading;
 
-  // Success State with Reverse & Dashboard options
+  // Success State
   if (orderSuccess) {
     return (
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent className="w-full sm:max-w-lg flex flex-col items-center justify-center">
           <div className="text-center space-y-6">
-            <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto animate-scale-in">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center mx-auto animate-scale-in">
+              <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-2">🎉 Order Submitted!</h2>
+              <h2 className="text-2xl font-bold mb-2">🎉 {t("checkout.orderSubmitted")}</h2>
               <p className="text-muted-foreground">
-                Your order #{orderSuccess.slice(0, 8).toUpperCase()} has been placed.
+                {t("checkout.orderPlaced")} #{orderSuccess.slice(0, 8).toUpperCase()}
               </p>
               <p className="text-muted-foreground mt-2">
-                We'll notify you once your payment is verified.
+                {t("checkout.verifyNotice")}
               </p>
             </div>
             <div className="space-y-2 w-full max-w-xs">
               <Button onClick={() => { onOpenChange(false); navigate("/user-dashboard"); }} className="w-full">
-                Go to Dashboard
+                {t("checkout.goToDashboard")}
               </Button>
               <Button onClick={handleViewOrder} variant="outline" className="w-full">
-                View Order Details
+                {t("checkout.viewOrder")}
               </Button>
               <Button onClick={() => { onOpenChange(false); navigate("/user-dashboard/orders"); }} variant="ghost" className="w-full text-muted-foreground">
-                Reverse Purchase (within 24h)
+                {t("checkout.reversePurchase")}
               </Button>
             </div>
           </div>
@@ -382,7 +417,7 @@ export const CheckoutPaymentSidebar = ({
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <SheetTitle>Choose Payment Method</SheetTitle>
+            <SheetTitle>{t("checkout.choosePayment")}</SheetTitle>
           </div>
 
           {/* Step indicator */}
@@ -404,31 +439,98 @@ export const CheckoutPaymentSidebar = ({
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto py-4 space-y-6">
-          {/* Payment Method Selection */}
+          {/* Currency Type Selection */}
           <div className="space-y-3">
-            {/* Bank Transfer Card */}
-            <div
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                paymentMethod === "bank_transfer"
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                  : "border-border hover:border-primary/50"
-              }`}
-              onClick={() => setPaymentMethod("bank_transfer")}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <h4 className="font-semibold">Bank Transfer</h4>
-                  <p className="text-xs text-muted-foreground">Direct bank deposit</p>
-                </div>
-                {paymentMethod === "bank_transfer" && (
-                  <Check className="ml-auto h-5 w-5 text-primary" />
-                )}
+            <Label className="flex items-center gap-2 text-sm font-semibold">
+              <Coins className="h-4 w-4" />
+              {t("checkout.selectCurrency")} *
+            </Label>
+            {validationErrors.currency && (
+              <p className="text-destructive text-xs">{validationErrors.currency}</p>
+            )}
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all text-center ${
+                  currencyType === "fiat"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => handleCurrencyTypeSelect("fiat")}
+              >
+                <DollarSign className="h-6 w-6 mx-auto mb-2 text-primary" />
+                <p className="font-semibold text-sm">{t("checkout.fiatCurrency")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("checkout.bankTransfer")}</p>
               </div>
+              <div
+                className={`p-4 border-2 rounded-xl cursor-pointer transition-all text-center ${
+                  currencyType === "crypto"
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                    : "border-border hover:border-primary/50"
+                }`}
+                onClick={() => handleCurrencyTypeSelect("crypto")}
+              >
+                <Bitcoin className="h-6 w-6 mx-auto mb-2 text-warning" />
+                <p className="font-semibold text-sm">{t("checkout.cryptocurrency")}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("checkout.stablecoin")}</p>
+              </div>
+            </div>
 
-              {paymentMethod === "bank_transfer" && (
+            {/* Currency selector */}
+            {currencyType === "fiat" && (
+              <div className="grid grid-cols-3 gap-2 animate-fade-in">
+                {FIAT_CURRENCIES.map((cur) => (
+                  <button
+                    key={cur.code}
+                    onClick={() => setSelectedCurrency(cur.code)}
+                    className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                      selectedCurrency === cur.code
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                    }`}
+                  >
+                    <span>{cur.flag}</span>
+                    <span>{cur.code}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {currencyType === "crypto" && (
+              <div className="grid grid-cols-3 gap-2 animate-fade-in">
+                {CRYPTO_CURRENCIES.map((cur) => (
+                  <button
+                    key={cur.code}
+                    onClick={() => setSelectedCurrency(cur.code)}
+                    className={`flex items-center gap-2 p-2.5 rounded-lg border text-xs font-medium transition-all ${
+                      selectedCurrency === cur.code
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border hover:border-primary/50 hover:bg-muted/50"
+                    }`}
+                  >
+                    <span>{cur.flag}</span>
+                    <span>{cur.code}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Payment Method Details - Only show after currency is selected */}
+          {selectedCurrency && currencyType === "fiat" && (
+            <div className="space-y-3 animate-fade-in">
+              <div className="p-4 border-2 border-primary rounded-xl bg-primary/5 ring-2 ring-primary/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Building2 className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{t("checkout.bankTransfer")}</h4>
+                    <p className="text-xs text-muted-foreground">{t("checkout.bankTransferDesc")}</p>
+                  </div>
+                  <Check className="ml-auto h-5 w-5 text-primary" />
+                </div>
+
                 <div className="space-y-2 pt-3 border-t">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Bank:</span>
@@ -444,10 +546,7 @@ export const CheckoutPaymentSidebar = ({
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyToClipboard(BANK_DETAILS.accountName, "Account name");
-                        }}
+                        onClick={() => copyToClipboard(BANK_DETAILS.accountName, "Account name")}
                       >
                         {copiedField === "Account name" ? (
                           <Check className="h-3 w-3" />
@@ -467,10 +566,7 @@ export const CheckoutPaymentSidebar = ({
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyToClipboard(BANK_DETAILS.accountNumber, "Account number");
-                        }}
+                        onClick={() => copyToClipboard(BANK_DETAILS.accountNumber, "Account number")}
                       >
                         {copiedField === "Account number" ? (
                           <Check className="h-3 w-3" />
@@ -481,32 +577,24 @@ export const CheckoutPaymentSidebar = ({
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Cryptocurrency Card */}
-            <div
-              className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                paymentMethod === "crypto"
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                  : "border-border hover:border-primary/50"
-              }`}
-              onClick={() => setPaymentMethod("crypto")}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                  <Bitcoin className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <h4 className="font-semibold">Cryptocurrency</h4>
-                  <p className="text-xs text-muted-foreground">USDT (BEP20)</p>
-                </div>
-                {paymentMethod === "crypto" && (
-                  <Check className="ml-auto h-5 w-5 text-primary" />
-                )}
               </div>
+            </div>
+          )}
 
-              {paymentMethod === "crypto" && (
+          {selectedCurrency && currencyType === "crypto" && (
+            <div className="space-y-3 animate-fade-in">
+              <div className="p-4 border-2 border-primary rounded-xl bg-primary/5 ring-2 ring-primary/20">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
+                    <Bitcoin className="w-5 h-5 text-warning" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{t("checkout.cryptocurrency")}</h4>
+                    <p className="text-xs text-muted-foreground">{t("checkout.cryptoDesc")}</p>
+                  </div>
+                  <Check className="ml-auto h-5 w-5 text-primary" />
+                </div>
+
                 <div className="space-y-2 pt-3 border-t">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-muted-foreground">Network:</span>
@@ -522,10 +610,7 @@ export const CheckoutPaymentSidebar = ({
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6 shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          copyToClipboard(CRYPTO_DETAILS.walletAddress, "Wallet address");
-                        }}
+                        onClick={() => copyToClipboard(CRYPTO_DETAILS.walletAddress, "Wallet address")}
                       >
                         {copiedField === "Wallet address" ? (
                           <Check className="h-3 w-3" />
@@ -536,21 +621,21 @@ export const CheckoutPaymentSidebar = ({
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Transaction Details - Required Fields */}
-          {paymentMethod && (
-            <div className="space-y-4 p-4 bg-muted/30 rounded-xl border">
+          {selectedCurrency && paymentMethod && (
+            <div className="space-y-4 p-4 bg-muted/30 rounded-xl border animate-fade-in">
               <h4 className="font-semibold text-sm flex items-center gap-2">
                 <FileText className="h-4 w-4" />
-                Payment Details
+                {t("checkout.paymentDetails")}
               </h4>
               
               <div className="space-y-2">
                 <Label htmlFor="transactionRef" className="flex items-center gap-1">
-                  Transaction Reference / Hash *
+                  {t("checkout.transactionRef")} *
                   {validationErrors.transactionRef && (
                     <span className="text-destructive text-xs ml-auto">{validationErrors.transactionRef}</span>
                   )}
@@ -572,7 +657,7 @@ export const CheckoutPaymentSidebar = ({
               <div className="space-y-2">
                 <Label htmlFor="paymentDate" className="flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5" />
-                  Payment Date *
+                  {t("checkout.paymentDate")} *
                   {validationErrors.paymentDate && (
                     <span className="text-destructive text-xs ml-auto">{validationErrors.paymentDate}</span>
                   )}
@@ -594,14 +679,14 @@ export const CheckoutPaymentSidebar = ({
               <div className="space-y-2">
                 <Label htmlFor="senderName" className="flex items-center gap-1">
                   <User className="h-3.5 w-3.5" />
-                  Sender Name *
+                  {t("checkout.senderName")} *
                   {validationErrors.senderName && (
                     <span className="text-destructive text-xs ml-auto">{validationErrors.senderName}</span>
                   )}
                 </Label>
                 <Input
                   id="senderName"
-                  placeholder="Name on the bank account or wallet"
+                  placeholder={t("checkout.senderNamePlaceholder")}
                   value={senderName}
                   onChange={(e) => {
                     setSenderName(e.target.value);
@@ -615,11 +700,11 @@ export const CheckoutPaymentSidebar = ({
 
               <div className="space-y-2">
                 <Label htmlFor="additionalNotes">
-                  Additional Notes (Optional)
+                  {t("checkout.additionalNotes")}
                 </Label>
                 <Textarea
                   id="additionalNotes"
-                  placeholder="Any additional information about your payment..."
+                  placeholder={t("checkout.notesPlaceholder")}
                   value={additionalNotes}
                   onChange={(e) => setAdditionalNotes(e.target.value)}
                   rows={3}
@@ -630,10 +715,10 @@ export const CheckoutPaymentSidebar = ({
           )}
 
           {/* Payment Proof Upload */}
-          {paymentMethod && (
-            <div className="space-y-2">
+          {selectedCurrency && paymentMethod && (
+            <div className="space-y-2 animate-fade-in">
               <Label className="flex items-center gap-1">
-                Payment Proof *
+                {t("checkout.proofRequired")} *
                 {validationErrors.proofFile && (
                   <span className="text-destructive text-xs ml-auto">{validationErrors.proofFile}</span>
                 )}
@@ -671,7 +756,7 @@ export const CheckoutPaymentSidebar = ({
                       <div className="space-y-1">
                         <Progress value={uploadProgress} className="h-2" />
                         <p className="text-xs text-muted-foreground">
-                          {uploadProgress < 100 ? "Uploading..." : "Upload complete!"}
+                          {uploadProgress < 100 ? t("checkout.uploading") : "Upload complete!"}
                         </p>
                       </div>
                     )}
@@ -683,10 +768,10 @@ export const CheckoutPaymentSidebar = ({
                   >
                     <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
                     <p className="text-sm font-medium">
-                      Click to upload payment proof
+                      {t("checkout.uploadProof")}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      JPG, PNG, WebP, or PDF (max 5MB)
+                      {t("checkout.uploadFormats")}
                     </p>
                   </div>
                 )}
@@ -702,10 +787,10 @@ export const CheckoutPaymentSidebar = ({
           )}
 
           {/* Order Summary */}
-          {paymentMethod && (
+          {selectedCurrency && paymentMethod && (
             <Collapsible defaultOpen>
               <CollapsibleTrigger className="flex items-center justify-between w-full text-sm font-medium py-2">
-                <span>Order Summary ({selectedItems.length} items)</span>
+                <span>{t("checkout.orderSummary")} ({selectedItems.length} {t("cart.items")})</span>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-2 space-y-2">
                 {selectedItems.map((item) => (
@@ -721,6 +806,11 @@ export const CheckoutPaymentSidebar = ({
                     </span>
                   </div>
                 ))}
+                {selectedCurrency && (
+                  <div className="pt-2 border-t text-xs text-muted-foreground">
+                    Currency: <span className="font-medium text-foreground">{selectedCurrency}</span>
+                  </div>
+                )}
               </CollapsibleContent>
             </Collapsible>
           )}
@@ -729,7 +819,7 @@ export const CheckoutPaymentSidebar = ({
         {/* Footer */}
         <div className="border-t pt-4 space-y-4">
           <div className="flex justify-between items-center text-lg font-bold">
-            <span>Total:</span>
+            <span>{t("checkout.total")}:</span>
             <span className="text-primary">${totalAmount.toFixed(2)}</span>
           </div>
 
@@ -744,21 +834,21 @@ export const CheckoutPaymentSidebar = ({
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>
                   {uploadProgress > 0 && uploadProgress < 100
-                    ? `Uploading... ${uploadProgress}%`
+                    ? `${t("checkout.uploading")} ${uploadProgress}%`
                     : uploadProgress === 100
-                    ? "Processing order..."
-                    : "Submitting..."}
+                    ? t("checkout.processing")
+                    : t("checkout.submitting")}
                 </span>
               </div>
             ) : (
-              "Submit Order"
+              t("checkout.submitOrder")
             )}
           </Button>
           
           {loading && (
             <div className="text-center">
               <p className="text-xs text-muted-foreground animate-pulse">
-                Please wait while we process your order...
+                {t("checkout.wait")}
               </p>
             </div>
           )}

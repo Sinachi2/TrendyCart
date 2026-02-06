@@ -8,9 +8,11 @@ import { Mail, Phone, MapPin, Send, Loader2, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const Contact = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -84,7 +86,6 @@ const Contact = () => {
         description: "We'll get back to you as soon as possible.",
       });
 
-      // Reset form
       setFormData({
         name: "",
         email: "",
@@ -93,7 +94,6 @@ const Contact = () => {
       });
       setValidationErrors({});
       
-      // Reset success state after 5 seconds
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error: any) {
       console.error("Error sending contact email:", error);
@@ -113,7 +113,6 @@ const Contact = () => {
       ...prev,
       [id]: value,
     }));
-    // Clear validation error when user starts typing
     if (validationErrors[id]) {
       setValidationErrors((prev) => ({ ...prev, [id]: "" }));
     }
@@ -133,9 +132,9 @@ const Contact = () => {
           
           <div className="container mx-auto px-4 relative">
             <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in">Get in Touch</h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in">{t("contact.title")}</h1>
               <p className="text-lg text-muted-foreground animate-fade-in">
-                Have a question? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
+                {t("contact.subtitle")}
               </p>
             </div>
           </div>
@@ -146,30 +145,30 @@ const Contact = () => {
             <div className="grid md:grid-cols-2 gap-8">
               {/* Contact Form */}
               <div className="bg-card border border-border rounded-2xl p-8 shadow-card animate-fade-in">
-                <h2 className="text-2xl font-bold mb-6">Send us a message</h2>
+                <h2 className="text-2xl font-bold mb-6">{t("contact.sendMessage")}</h2>
                 
                 {isSuccess ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4 animate-scale-in">
                       <CheckCircle2 className="h-8 w-8 text-green-600" />
                     </div>
-                    <h3 className="text-xl font-semibold mb-2">Message Sent!</h3>
+                    <h3 className="text-xl font-semibold mb-2">{t("contact.messageSent")}</h3>
                     <p className="text-muted-foreground">
-                      Thank you for reaching out. We'll get back to you soon.
+                      {t("contact.messageSentDesc")}
                     </p>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                       <Label htmlFor="name" className="flex items-center gap-1 mb-2">
-                        Name *
+                        {t("contact.name")} *
                         {validationErrors.name && (
                           <span className="text-destructive text-xs ml-auto">{validationErrors.name}</span>
                         )}
                       </Label>
                       <Input 
                         id="name" 
-                        placeholder="Your name" 
+                        placeholder={t("contact.namePlaceholder")}
                         value={formData.name}
                         onChange={handleChange}
                         disabled={isLoading}
@@ -179,7 +178,7 @@ const Contact = () => {
 
                     <div>
                       <Label htmlFor="email" className="flex items-center gap-1 mb-2">
-                        Email *
+                        {t("contact.email")} *
                         {validationErrors.email && (
                           <span className="text-destructive text-xs ml-auto">{validationErrors.email}</span>
                         )}
@@ -187,7 +186,7 @@ const Contact = () => {
                       <Input 
                         id="email" 
                         type="email" 
-                        placeholder="your@email.com" 
+                        placeholder={t("contact.emailPlaceholder")}
                         value={formData.email}
                         onChange={handleChange}
                         disabled={isLoading}
@@ -197,14 +196,14 @@ const Contact = () => {
 
                     <div>
                       <Label htmlFor="subject" className="flex items-center gap-1 mb-2">
-                        Subject *
+                        {t("contact.subject")} *
                         {validationErrors.subject && (
                           <span className="text-destructive text-xs ml-auto">{validationErrors.subject}</span>
                         )}
                       </Label>
                       <Input 
                         id="subject" 
-                        placeholder="How can we help?" 
+                        placeholder={t("contact.subjectPlaceholder")}
                         value={formData.subject}
                         onChange={handleChange}
                         disabled={isLoading}
@@ -214,14 +213,14 @@ const Contact = () => {
 
                     <div>
                       <Label htmlFor="message" className="flex items-center gap-1 mb-2">
-                        Message *
+                        {t("contact.message")} *
                         {validationErrors.message && (
                           <span className="text-destructive text-xs ml-auto">{validationErrors.message}</span>
                         )}
                       </Label>
                       <Textarea
                         id="message"
-                        placeholder="Tell us more about your inquiry..."
+                        placeholder={t("contact.messagePlaceholder")}
                         rows={5}
                         value={formData.message}
                         onChange={handleChange}
@@ -234,11 +233,11 @@ const Contact = () => {
                       {isLoading ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-5 w-5 animate-spin" />
-                          <span>Sending...</span>
+                          <span>{t("contact.sending")}</span>
                         </div>
                       ) : (
                         <>
-                          Send Message <Send className="h-5 w-5" />
+                          {t("contact.send")} <Send className="h-5 w-5" />
                         </>
                       )}
                     </Button>
@@ -260,7 +259,7 @@ const Contact = () => {
                       <Mail className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg mb-2">Email Us</h3>
+                      <h3 className="font-semibold text-lg mb-2">{t("contact.emailUs")}</h3>
                       <p className="text-muted-foreground text-sm">trendycart96@gmail.com</p>
                       <p className="text-muted-foreground text-sm">ezeonyekasinachifranklin@gmail.com</p>                    
                       <p className="text-muted-foreground text-sm">ezeonyekasinachi@gmail.com</p>
@@ -274,10 +273,10 @@ const Contact = () => {
                       <Phone className="h-6 w-6 text-success" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg mb-2">Call Us</h3>
+                      <h3 className="font-semibold text-lg mb-2">{t("contact.callUs")}</h3>
                       <p className="text-muted-foreground">+234 (806) 333-2087</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Sun-Sat: 9AM - 6PM
+                        {t("contact.hours")}
                       </p>
                     </div>
                   </div>
@@ -289,7 +288,7 @@ const Contact = () => {
                       <MapPin className="h-6 w-6 text-accent" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg mb-2">Visit Us</h3>
+                      <h3 className="font-semibold text-lg mb-2">{t("contact.visitUs")}</h3>
                       <p className="text-muted-foreground">
                         78 Fadahunsi Street<br />
                         Surulere Lagos, 101241<br />

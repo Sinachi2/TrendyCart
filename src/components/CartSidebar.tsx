@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { CheckoutItemsSidebar } from "./CheckoutItemsSidebar";
 import { CheckoutPaymentSidebar } from "./CheckoutPaymentSidebar";
 
@@ -39,6 +40,7 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
   const [totalAmount, setTotalAmount] = useState(0);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -171,10 +173,10 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
             <SheetTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ShoppingBag className="h-5 w-5 text-primary" />
-                <span>Shopping Cart</span>
+                <span>{t("cart.title")}</span>
                 {cartItems.length > 0 && (
                   <span className="text-sm font-normal text-muted-foreground">
-                    ({cartItems.length} items)
+                    ({cartItems.length} {t("cart.items")})
                   </span>
                 )}
               </div>
@@ -186,7 +188,7 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
                   disabled={loading}
                   className="text-muted-foreground hover:text-destructive text-xs"
                 >
-                  Clear All
+                  {t("cart.clearAll")}
                 </Button>
               )}
             </SheetTitle>
@@ -198,12 +200,12 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
                 <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-6">
                   <ShoppingBag className="h-10 w-10 text-muted-foreground/50" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Your cart is empty</h3>
+                <h3 className="text-lg font-semibold mb-2">{t("cart.empty")}</h3>
                 <p className="text-muted-foreground text-sm mb-6 max-w-[200px]">
-                  Looks like you haven't added any products yet
+                  {t("cart.emptyDesc")}
                 </p>
                 <Button onClick={handleShopAll} className="shadow-sm">
-                  Browse Products
+                  {t("cart.browse")}
                 </Button>
               </div>
             ) : (
@@ -247,23 +249,23 @@ export const CartSidebar = ({ open, onOpenChange }: CartSidebarProps) => {
           {cartItems.length > 0 && (
             <div className="border-t border-border/50 px-6 py-4 space-y-4 bg-muted/20">
               <div className="flex justify-between items-center">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">{t("cart.subtotal")}</span>
                 <span className="text-xl font-bold">${total.toFixed(2)}</span>
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                Shipping calculated at checkout
+                {t("cart.shipping")}
               </p>
 
               <div className="space-y-2">
                 <Button onClick={handleCheckout} className="w-full shadow-sm" size="lg">
-                  Proceed to Checkout
+                  {t("cart.checkout")}
                 </Button>
                 <Button
                   onClick={handleShopAll}
                   variant="ghost"
                   className="w-full text-muted-foreground"
                 >
-                  Continue Shopping
+                  {t("cart.continueShopping")}
                 </Button>
               </div>
             </div>

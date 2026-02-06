@@ -5,8 +5,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import DealsSection from "@/components/DealsSection";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const Home = () => {
+  const { t } = useLanguage();
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -24,29 +27,28 @@ const Home = () => {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8 animate-fade-in">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">New Collection Available</span>
+              <span className="text-sm font-medium text-primary">{t("home.badge")}</span>
             </div>
             
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight animate-fade-in">
-              Discover Your
+              {t("home.heroTitle1")}
               <span className="block gradient-text mt-2">
-                Perfect Style
+                {t("home.heroTitle2")}
               </span>
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-fade-in text-balance">
-              Shop the latest trends in fashion, electronics, and accessories. 
-              Premium quality products curated just for you.
+              {t("home.heroSubtitle")}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
               <Button asChild size="lg" className="text-base px-8 shadow-elegant btn-glow">
                 <Link to="/shop">
-                  Shop Now <ArrowRight className="ml-2 h-5 w-5" />
+                  {t("home.shopNow")} <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="text-base px-8">
-                <Link to="/about">Learn More</Link>
+                <Link to="/about">{t("home.learnMore")}</Link>
               </Button>
             </div>
 
@@ -58,10 +60,10 @@ const Home = () => {
                     <Star key={i} className="h-4 w-4 fill-warning text-warning" />
                   ))}
                 </div>
-                <span>4.9/5 from 2,000+ reviews</span>
+                <span>{t("home.reviews")}</span>
               </div>
               <div className="hidden sm:block w-px h-4 bg-border" />
-              <span>Free shipping on $50+</span>
+              <span>{t("home.freeShippingBadge")}</span>
             </div>
           </div>
         </div>
@@ -74,20 +76,20 @@ const Home = () => {
             {[
               {
                 icon: Truck,
-                title: "Free Shipping",
-                description: "On orders over $50",
+                title: t("home.freeShipping"),
+                description: t("home.freeShippingDesc"),
                 color: "text-primary bg-primary/10",
               },
               {
                 icon: Shield,
-                title: "Secure Payment",
-                description: "100% protected transactions",
+                title: t("home.securePayment"),
+                description: t("home.securePaymentDesc"),
                 color: "text-success bg-success/10",
               },
               {
                 icon: Headphones,
-                title: "24/7 Support",
-                description: "Dedicated customer service",
+                title: t("home.support"),
+                description: t("home.supportDesc"),
                 color: "text-accent bg-accent/10",
               },
             ].map((feature, index) => (
@@ -117,11 +119,11 @@ const Home = () => {
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-accent/10 rounded-full mb-4">
               <Zap className="h-4 w-4 text-accent" />
-              <span className="text-sm font-medium text-accent">Trending Now</span>
+              <span className="text-sm font-medium text-accent">{t("home.trending")}</span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Featured Products</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">{t("home.featured")}</h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-              Handpicked selection of our best sellers loved by thousands
+              {t("home.featuredDesc")}
             </p>
           </div>
           
@@ -132,7 +134,7 @@ const Home = () => {
           <div className="text-center mt-10">
             <Button asChild size="lg" variant="outline" className="px-8">
               <Link to="/shop">
-                View All Products <ArrowRight className="ml-2 h-5 w-5" />
+                {t("home.viewAll")} <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
           </div>
@@ -146,13 +148,13 @@ const Home = () => {
         
         <div className="container mx-auto px-4 text-center relative">
           <h2 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-4">
-            Ready to Start Shopping?
+            {t("home.ctaTitle")}
           </h2>
           <p className="text-primary-foreground/90 text-lg mb-8 max-w-2xl mx-auto">
-            Join thousands of happy customers and discover amazing deals every day
+            {t("home.ctaSubtitle")}
           </p>
           <Button asChild size="lg" variant="secondary" className="px-8 shadow-lg">
-            <Link to="/shop">Browse Collection</Link>
+            <Link to="/shop">{t("home.browseCollection")}</Link>
           </Button>
         </div>
       </section>
