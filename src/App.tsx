@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { LanguageProvider } from "@/hooks/useLanguage";
 import { ProductCompareProvider } from "@/contexts/ProductCompareContext";
 import ProductCompareBar from "@/components/ProductCompareBar";
 import ChatWidget from "@/components/ChatWidget";
@@ -41,6 +42,7 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ThemeProvider defaultTheme="light" storageKey="trendycart-ui-theme">
+    <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ProductCompareProvider>
@@ -85,6 +87,7 @@ const App = () => (
         </ProductCompareProvider>
       </TooltipProvider>
     </QueryClientProvider>
+    </LanguageProvider>
   </ThemeProvider>
 );
 

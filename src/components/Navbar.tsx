@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/trendycart-logo.png";
 import { CartSidebar } from "@/components/CartSidebar";
 import NotificationBell from "@/components/NotificationBell";
 import ThemeToggle from "@/components/ThemeToggle";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { cn } from "@/lib/utils";
 
 const Navbar = () => {
@@ -27,6 +29,7 @@ const Navbar = () => {
   const [fullName, setFullName] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -95,10 +98,10 @@ const Navbar = () => {
   };
 
   const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Shop", path: "/shop" },
-    { name: "About", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    { name: t("nav.home"), path: "/" },
+    { name: t("nav.shop"), path: "/shop" },
+    { name: t("nav.about"), path: "/about" },
+    { name: t("nav.contact"), path: "/contact" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -148,13 +151,14 @@ const Navbar = () => {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 )}
               >
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
             )}
           </div>
 
           {/* User Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
+            <LanguageSwitcher />
             <ThemeToggle />
             {user && <NotificationBell />}
             
@@ -199,15 +203,15 @@ const Navbar = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/user-dashboard")} className="cursor-pointer">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
-                    My Dashboard
+                    {t("nav.myDashboard")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/wishlist")} className="cursor-pointer">
                     <Heart className="mr-2 h-4 w-4" />
-                    My Wishlist
+                    {t("nav.myWishlist")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setCartOpen(true)} className="cursor-pointer">
                     <ShoppingCart className="mr-2 h-4 w-4" />
-                    My Cart
+                    {t("nav.myCart")}
                     {cartCount > 0 && (
                       <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                         {cartCount}
@@ -217,13 +221,13 @@ const Navbar = () => {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={signOut} className="cursor-pointer text-destructive focus:text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                    {t("nav.signOut")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <Button asChild size="sm" className="hidden sm:inline-flex shadow-sm">
-                <Link to="/auth">Sign In</Link>
+                <Link to="/auth">{t("nav.signIn")}</Link>
               </Button>
             )}
 
@@ -274,7 +278,7 @@ const Navbar = () => {
                 )}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
             )}
             {!user && (
@@ -283,7 +287,7 @@ const Navbar = () => {
                 className="px-4 py-3 rounded-lg text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Sign In
+                {t("nav.signIn")}
               </Link>
             )}
           </div>

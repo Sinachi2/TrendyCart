@@ -4,19 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/hooks/useLanguage";
 import logo from "@/assets/trendycart-logo.png";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
 
     setIsLoading(true);
-    // Simulate newsletter signup
     setTimeout(() => {
       toast({
         title: "Subscribed!",
@@ -28,17 +29,16 @@ const Footer = () => {
   };
 
   const quickLinks = [
-    { name: "Home", path: "/" },
-    { name: "Shop", path: "/shop" },
-    { name: "About Us", path: "/about" },
-    { name: "Contact", path: "/contact" },
+    { name: t("nav.home"), path: "/" },
+    { name: t("nav.shop"), path: "/shop" },
+    { name: t("nav.about"), path: "/about" },
+    { name: t("nav.contact"), path: "/contact" },
   ];
 
   const customerService = [
-    { name: "My Dashboard", path: "/user-dashboard" },
-    { name: "My Orders", path: "/view-orders" },
-    { name: "Wishlist", path: "/wishlist" },
-    { name: "Cart", path: "/cart" },
+    { name: t("nav.myDashboard"), path: "/user-dashboard" },
+    { name: t("nav.myCart"), path: "/cart" },
+    { name: t("nav.myWishlist"), path: "/wishlist" },
   ];
 
   const socialLinks = [
@@ -57,14 +57,14 @@ const Footer = () => {
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
               <Mail className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">Subscribe to Our Newsletter</h3>
+            <h3 className="text-2xl font-bold mb-2">{t("footer.newsletter")}</h3>
             <p className="text-muted-foreground mb-6">
-              Get exclusive offers, new product alerts, and style tips delivered to your inbox.
+              {t("footer.newsletterDesc")}
             </p>
             <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <Input
                 type="email"
-                placeholder="Enter your email"
+                placeholder={t("footer.emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="flex-1 h-12"
@@ -72,10 +72,10 @@ const Footer = () => {
               />
               <Button type="submit" size="lg" disabled={isLoading} className="gap-2">
                 {isLoading ? (
-                  "Subscribing..."
+                  t("footer.subscribing")
                 ) : (
                   <>
-                    Subscribe <Send className="h-4 w-4" />
+                    {t("footer.subscribe")} <Send className="h-4 w-4" />
                   </>
                 )}
               </Button>
@@ -93,8 +93,7 @@ const Footer = () => {
               <img src={logo} alt="TrendyCart" className="h-10 w-auto" />
             </Link>
             <p className="text-muted-foreground text-sm mb-6 leading-relaxed">
-              Your premier destination for trendy fashion, electronics, and lifestyle products. 
-              Quality guaranteed, style delivered.
+              {t("footer.description")}
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
@@ -112,7 +111,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Quick Links</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t("footer.quickLinks")}</h4>
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.path}>
@@ -129,7 +128,7 @@ const Footer = () => {
 
           {/* Customer Service */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Customer Service</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t("footer.customerService")}</h4>
             <ul className="space-y-3">
               {customerService.map((link) => (
                 <li key={link.path}>
@@ -146,7 +145,7 @@ const Footer = () => {
 
           {/* Contact Info */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Contact Us</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t("footer.contactUs")}</h4>
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
@@ -177,11 +176,11 @@ const Footer = () => {
       <div className="border-t border-border">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} TrendyCart. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} TrendyCart. {t("footer.rights")}</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-primary transition-colors">Shipping Policy</a>
+              <a href="#" className="hover:text-primary transition-colors">{t("footer.privacy")}</a>
+              <a href="#" className="hover:text-primary transition-colors">{t("footer.terms")}</a>
+              <a href="#" className="hover:text-primary transition-colors">{t("footer.shippingPolicy")}</a>
             </div>
           </div>
         </div>
