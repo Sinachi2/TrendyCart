@@ -5,6 +5,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import DealsSection from "@/components/DealsSection";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import HowItWorksSection from "@/components/HowItWorksSection";
+import FAQSection from "@/components/FAQSection";
+import TrustBadgesSection from "@/components/TrustBadgesSection";
 import { useLanguage } from "@/hooks/useLanguage";
 
 const Home = () => {
@@ -140,6 +144,18 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* How It Works */}
+      <HowItWorksSection />
+
+      {/* Trust Badges */}
+      <TrustBadgesSection />
+
+      {/* Testimonials */}
+      <TestimonialsSection />
+
+      {/* FAQ */}
+      <FAQSection />
 
       {/* CTA Section - Premium gradient */}
       <section className="py-24 relative overflow-hidden">
