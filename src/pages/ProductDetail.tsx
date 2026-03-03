@@ -4,6 +4,7 @@ import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield, GitCompareArrow
 import ProductReviews from "@/components/ProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
+import RelatedProducts from "@/components/RelatedProducts";
 import CountdownTimer from "@/components/CountdownTimer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -394,6 +395,9 @@ const ProductDetail = () => {
         <div className="mt-12">
           <ProductReviews productId={product.id} />
         </div>
+
+        {/* Related Products */}
+        <RelatedProducts category={product.category} currentProductId={product.id} />
 
         {/* Recently Viewed */}
         <RecentlyViewedProducts />

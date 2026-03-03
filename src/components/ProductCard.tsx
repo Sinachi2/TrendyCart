@@ -234,6 +234,7 @@ const ProductCard = ({
         <img
           src={image || "/placeholder.svg"}
           alt={name}
+          loading="lazy"
           className={cn(
             "w-full h-56 sm:h-64 object-cover transition-transform duration-500",
             "group-hover:scale-105",
