@@ -13,6 +13,7 @@ import HowItWorksSection from "@/components/HowItWorksSection";
 import FAQSection from "@/components/FAQSection";
 import TrustBadgesSection from "@/components/TrustBadgesSection";
 import { useLanguage } from "@/hooks/useLanguage";
+import heroBg from "@/assets/hero-bg.jpg";
 
 const Home = () => {
   const { t } = useLanguage();
@@ -22,11 +23,11 @@ const Home = () => {
       <Navbar />
       
       {/* Hero Section - Premium Design */}
-      <section className="relative overflow-hidden">
-        {/* Background gradient orbs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 -left-40 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
+      <section className="relative overflow-hidden min-h-[80vh] flex items-center">
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <img src={heroBg} alt="" className="w-full h-full object-cover" loading="eager" />
+          <div className="absolute inset-0 bg-background/60 dark:bg-background/70 backdrop-blur-[2px]" />
         </div>
         
         <div className="container mx-auto px-4 py-20 md:py-32 relative">
