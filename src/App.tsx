@@ -8,6 +8,9 @@ import { LanguageProvider } from "@/hooks/useLanguage";
 import { ProductCompareProvider } from "@/contexts/ProductCompareContext";
 import ProductCompareBar from "@/components/ProductCompareBar";
 import ChatWidget from "@/components/ChatWidget";
+import BackToTop from "@/components/BackToTop";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import ExitIntentPopup from "@/components/ExitIntentPopup";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import About from "./pages/About";
@@ -83,6 +86,9 @@ const App = () => (
             </Routes>
             <ProductCompareBar />
             <ChatWidget />
+            <BackToTop />
+            <MobileBottomNav />
+            <ExitIntentPopup />
           </BrowserRouter>
         </ProductCompareProvider>
       </TooltipProvider>

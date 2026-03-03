@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, Percent } from "lucide-react";
+import { ArrowRight, Percent, Star, TrendingUp } from "lucide-react";
 import CountdownTimer from "@/components/CountdownTimer";
 
 interface Product {
@@ -88,13 +88,14 @@ const DealsSection = () => {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {deals.map((product) => (
+          {deals.map((product, index) => (
             <Link to={`/product/${product.id}`} key={product.id}>
               <Card className="group overflow-hidden hover:shadow-elegant transition-all duration-300">
                 <div className="relative">
                   <img
                     src={product.image_url || "/placeholder.svg"}
                     alt={product.name}
+                    loading="lazy"
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground text-lg px-3 py-1">
@@ -111,10 +112,23 @@ const DealsSection = () => {
                   )}
                 </div>
                 <CardContent className="p-4">
-                  <p className="text-sm text-muted-foreground mb-1">{product.category}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-sm text-muted-foreground">{product.category}</p>
+                    {index === 0 && (
+                      <Badge variant="secondary" className="text-[10px] bg-warning/10 text-warning-foreground gap-1">
+                        <TrendingUp className="h-3 w-3" /> Most Popular
+                      </Badge>
+                    )}
+                  </div>
                   <h3 className="font-semibold text-lg mb-2 line-clamp-1 group-hover:text-primary transition-colors">
                     {product.name}
                   </h3>
+                  <div className="flex items-center gap-1 mb-2">
+                    {[1,2,3,4,5].map((s) => (
+                      <Star key={s} className={`h-3.5 w-3.5 ${s <= 4 ? "fill-warning text-warning" : "text-muted-foreground/30"}`} />
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-1">4.0</span>
+                  </div>
                   <div className="flex items-center gap-3">
                     <span className="text-2xl font-bold text-destructive">${product.price}</span>
                     <span className="text-lg text-muted-foreground line-through">

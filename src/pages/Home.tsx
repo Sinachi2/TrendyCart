@@ -5,6 +5,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import DealsSection from "@/components/DealsSection";
+import FeaturedCategories from "@/components/FeaturedCategories";
+import BrandStory from "@/components/BrandStory";
+import ShippingReturns from "@/components/ShippingReturns";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import HowItWorksSection from "@/components/HowItWorksSection";
 import FAQSection from "@/components/FAQSection";
@@ -113,6 +116,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+      {/* Featured Categories */}
+      <FeaturedCategories />
 
       {/* Deals Section */}
       <DealsSection />
@@ -154,6 +159,9 @@ const Home = () => {
       {/* Testimonials */}
       <TestimonialsSection />
 
+      {/* Brand Story */}
+      <BrandStory />
+
       {/* FAQ */}
       <FAQSection />
 
@@ -174,6 +182,9 @@ const Home = () => {
           </Button>
         </div>
       </section>
+
+      {/* Shipping & Returns */}
+      <ShippingReturns />
 
       <Footer />
     </div>
