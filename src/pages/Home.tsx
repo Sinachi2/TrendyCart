@@ -1,4 +1,4 @@
-import { ArrowRight, Truck, Shield, Headphones, Sparkles, Star, Zap } from "lucide-react";
+import { ArrowRight, Truck, Shield, Headphones, Sparkles, Star, Zap, ShoppingBag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -13,72 +13,149 @@ import HowItWorksSection from "@/components/HowItWorksSection";
 import FAQSection from "@/components/FAQSection";
 import TrustBadgesSection from "@/components/TrustBadgesSection";
 import { useLanguage } from "@/hooks/useLanguage";
-import heroBg from "@/assets/hero-bg.jpg";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const Home = () => {
   const { t } = useLanguage();
+  const [featuredProduct, setFeaturedProduct] = useState<any>(null);
+
+  useEffect(() => {
+    supabase
+      .from("products")
+      .select("*")
+      .eq("is_deal_active", true)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setFeaturedProduct(data);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Hero Section - Premium Design */}
-      <section className="relative overflow-hidden min-h-[80vh] flex items-center">
-        {/* Background image */}
-        <div className="absolute inset-0">
-          <img src={heroBg} alt="" className="w-full h-full object-cover" loading="eager" />
-          <div className="absolute inset-0 bg-background/60 dark:bg-background/70 backdrop-blur-[2px]" />
-        </div>
+      {/* Hero Section - Premium Apple-style */}
+      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/[0.03] to-accent/[0.05] dark:from-background dark:via-primary/[0.06] dark:to-accent/[0.08]" />
         
-        <div className="container mx-auto px-4 py-20 md:py-32 relative">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-8 animate-fade-in">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">{t("home.badge")}</span>
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight animate-fade-in">
-              {t("home.heroTitle1")}
-              <span className="block gradient-text mt-2">
-                {t("home.heroTitle2")}
-              </span>
-            </h1>
-            
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-fade-in text-balance">
-              {t("home.heroSubtitle")}
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-              <Button asChild size="lg" className="text-base px-8 shadow-elegant btn-glow">
-                <Link to="/shop">
-                  {t("home.shopNow")} <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="text-base px-8">
-                <Link to="/about">{t("home.learnMore")}</Link>
-              </Button>
+        {/* Floating blobs */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-primary/[0.07] blur-[100px] animate-pulse-soft" />
+          <div className="absolute top-1/2 -left-48 w-[400px] h-[400px] rounded-full bg-accent/[0.08] blur-[100px] animate-pulse-soft" style={{ animationDelay: '1s' }} />
+          <div className="absolute bottom-0 right-1/4 w-[300px] h-[300px] rounded-full bg-success/[0.05] blur-[80px] animate-pulse-soft" style={{ animationDelay: '2s' }} />
+        </div>
+
+        {/* Grid pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]" style={{
+          backgroundImage: 'radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 1px, transparent 0)',
+          backgroundSize: '40px 40px'
+        }} />
+        
+        <div className="container mx-auto px-4 py-16 md:py-24 relative">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Left - Content */}
+            <div className="text-left space-y-8 animate-fade-in">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">{t("home.badge")}</span>
+              </div>
+              
+              <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
+                {t("home.heroTitle1")}
+                <span className="block gradient-text mt-2">
+                  {t("home.heroTitle2")}
+                </span>
+              </h1>
+              
+              <p className="text-lg md:text-xl text-muted-foreground max-w-lg text-balance">
+                {t("home.heroSubtitle")}
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button asChild size="lg" className="text-base px-8 shadow-elegant btn-glow group">
+                  <Link to="/shop">
+                    {t("home.shopNow")}
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="text-base px-8 glass border-border/50">
+                  <Link to="/shop">
+                    <ShoppingBag className="mr-2 h-5 w-5" />
+                    {t("home.learnMore")}
+                  </Link>
+                </Button>
+              </div>
+
+              {/* Trust badges */}
+              <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="flex -space-x-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className="h-4 w-4 fill-warning text-warning" />
+                    ))}
+                  </div>
+                  <span className="font-medium">{t("home.reviews")}</span>
+                </div>
+                <div className="hidden sm:block w-px h-4 bg-border" />
+                <span>{t("home.freeShippingBadge")}</span>
+              </div>
             </div>
 
-            {/* Trust badges */}
-            <div className="flex flex-wrap items-center justify-center gap-6 mt-12 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-1">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="h-4 w-4 fill-warning text-warning" />
-                  ))}
-                </div>
-                <span>{t("home.reviews")}</span>
+            {/* Right - Featured Product Showcase */}
+            <div className="relative flex items-center justify-center animate-slide-in-up">
+              {/* Glow behind product */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-72 h-72 md:w-96 md:h-96 rounded-full bg-primary/10 blur-[60px]" />
               </div>
-              <div className="hidden sm:block w-px h-4 bg-border" />
-              <span>{t("home.freeShippingBadge")}</span>
+
+              {/* Glass card with product */}
+              <div className="relative glass rounded-3xl p-6 md:p-8 shadow-elegant max-w-md w-full">
+                {featuredProduct?.image_url ? (
+                  <img
+                    src={featuredProduct.image_url}
+                    alt={featuredProduct.name}
+                    className="w-full h-64 md:h-72 object-contain mb-6 drop-shadow-xl"
+                    loading="eager"
+                  />
+                ) : (
+                  <div className="w-full h-64 md:h-72 bg-muted/30 rounded-2xl mb-6 flex items-center justify-center">
+                    <ShoppingBag className="h-16 w-16 text-muted-foreground/30" />
+                  </div>
+                )}
+                
+                {featuredProduct && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{featuredProduct.category}</p>
+                    <h3 className="text-xl font-bold">{featuredProduct.name}</h3>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl font-bold text-primary">${featuredProduct.price}</span>
+                      {featuredProduct.original_price && (
+                        <span className="text-lg text-muted-foreground line-through">${featuredProduct.original_price}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Floating discount badge */}
+                {featuredProduct?.original_price && (
+                  <div className="absolute -top-3 -right-3 bg-destructive text-destructive-foreground rounded-full h-14 w-14 flex items-center justify-center shadow-lg animate-pulse-soft">
+                    <span className="text-sm font-bold">
+                      -{Math.round((1 - featuredProduct.price / featuredProduct.original_price) * 100)}%
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features - Modern cards */}
-      <section className="py-16 border-y border-border bg-muted/30">
+      {/* Features - Glassmorphism cards */}
+      <section className="py-16 relative">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-3 gap-6">
             {[
@@ -103,7 +180,7 @@ const Home = () => {
             ].map((feature, index) => (
               <div
                 key={index}
-                className="flex items-start gap-4 p-6 bg-card rounded-2xl border border-border/50 shadow-card hover-lift"
+                className="flex items-start gap-4 p-6 glass rounded-2xl shadow-card hover-lift"
               >
                 <div className={`p-3 rounded-xl ${feature.color}`}>
                   <feature.icon className="h-6 w-6" />
@@ -117,6 +194,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+
       {/* Featured Categories */}
       <FeaturedCategories />
 
