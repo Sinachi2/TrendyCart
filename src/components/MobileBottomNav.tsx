@@ -50,7 +50,7 @@ const MobileBottomNav = () => {
       </nav>
 
       {/* Cart Sidebar */}
-      <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
+      <CartSidebar open={cartOpen} onOpenChange={setCartOpen} />
 
       {/* Search Sheet */}
       <Sheet open={searchOpen} onOpenChange={setSearchOpen}>
