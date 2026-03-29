@@ -1,4 +1,4 @@
-import { ShoppingCart, Menu, X, LogOut, Heart, LayoutDashboard, ChevronDown } from "lucide-react";
+import { ShoppingCart, Menu, X, LogOut, Heart, LayoutDashboard, ChevronDown, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,13 @@ import { CartSidebar } from "@/components/CartSidebar";
 import NotificationBell from "@/components/NotificationBell";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { cn } from "@/lib/utils";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
@@ -154,6 +156,16 @@ const Navbar = () => {
                 {t("nav.dashboard")}
               </Link>
             )}
+          </div>
+
+          {/* Desktop Search */}
+          <div className="hidden lg:block w-64 xl:w-80">
+            <SearchAutocomplete
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search products..."
+              compact
+            />
           </div>
 
           {/* User Actions */}
