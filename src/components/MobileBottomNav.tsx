@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Home, Search, ShoppingCart, User, Grid3X3 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import CartSidebar from "@/components/CartSidebar";
+import { CartSidebar } from "@/components/CartSidebar";
 import {
   Sheet,
   SheetContent,
