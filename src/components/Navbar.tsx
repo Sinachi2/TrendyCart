@@ -158,6 +158,16 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Desktop Search */}
+          <div className="hidden lg:block w-64 xl:w-80">
+            <SearchAutocomplete
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search products..."
+              compact
+            />
+          </div>
+
           {/* User Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
             <LanguageSwitcher />
