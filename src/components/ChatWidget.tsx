@@ -468,8 +468,8 @@ const ChatWidget = () => {
 
             {isTyping && (
               <div className="flex gap-2">
-                <div className="h-7 w-7 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
+                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
                   <div className="flex items-center gap-2">

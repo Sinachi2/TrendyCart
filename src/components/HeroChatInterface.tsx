@@ -3,7 +3,6 @@ import { Send, Bot, User, Sparkles, ShoppingBag, Package, Palette, Code, Loader2
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
-import heroBg from "@/assets/ai-hero-bg.jpg";
 
 interface ChatMessage {
   id: string;
@@ -71,19 +70,31 @@ const HeroChatInterface = () => {
 
   return (
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
-      {/* Background image */}
-      <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" width={1920} height={1080} />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/50 to-background" />
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-hero-gradient" />
 
-      {/* Animated floating glow orbs */}
+      {/* Grid pattern overlay */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: "radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+
+      {/* Animated floating shapes */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-[10%] w-96 h-96 rounded-full bg-primary/15 blur-[140px] animate-pulse" style={{ animationDuration: "4s" }} />
-        <div className="absolute top-[40%] right-[5%] w-72 h-72 rounded-full bg-accent/15 blur-[120px] animate-pulse" style={{ animationDuration: "5s", animationDelay: "1s" }} />
-        <div className="absolute bottom-10 left-[30%] w-80 h-80 rounded-full bg-primary/10 blur-[130px] animate-pulse" style={{ animationDuration: "6s", animationDelay: "2s" }} />
+        <div className="floating-shape absolute top-[10%] left-[8%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[160px]" style={{ animationDelay: "0s" }} />
+        <div className="floating-shape absolute top-[50%] right-[5%] w-[400px] h-[400px] rounded-full bg-accent/10 blur-[140px]" style={{ animationDelay: "2s" }} />
+        <div className="floating-shape absolute bottom-[5%] left-[25%] w-[450px] h-[450px] rounded-full bg-primary/8 blur-[150px]" style={{ animationDelay: "4s" }} />
+        <div className="floating-shape absolute top-[30%] left-[50%] w-[300px] h-[300px] rounded-full bg-accent/5 blur-[120px]" style={{ animationDelay: "1s" }} />
       </div>
 
+      {/* Bottom gradient fade to background */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+
       <div className="container mx-auto px-4 relative z-10 py-12">
-        <div className="max-w-3xl mx-auto text-center space-y-6">
+        <div className="max-w-3xl mx-auto text-center space-y-5">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full animate-fade-in">
             <Sparkles className="h-4 w-4 text-primary" />
@@ -91,18 +102,18 @@ const HeroChatInterface = () => {
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight animate-fade-in">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-[1.1] tracking-tight animate-fade-in">
             Shop Smarter with
-            <span className="block gradient-text">TrendyBot AI</span>
+            <span className="block gradient-text mt-1">TrendyBot AI</span>
           </h1>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto animate-fade-in">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto animate-fade-in">
             Ask anything about products, track orders, get payment help — your AI assistant is always ready.
           </p>
 
-          {/* Chat Interface - Glassmorphism */}
-          <div className="mt-8 glass rounded-3xl shadow-elegant overflow-hidden border border-border/30 animate-slide-in-up max-w-2xl mx-auto">
+          {/* Chat Interface */}
+          <div className="mt-6 glass rounded-2xl shadow-elegant overflow-hidden border border-border/30 animate-fade-in max-w-2xl mx-auto">
             {/* Chat messages */}
-            <div ref={scrollRef} className="h-[280px] overflow-y-auto p-5 space-y-4">
+            <div ref={scrollRef} className="h-[260px] overflow-y-auto p-5 space-y-4">
               {messages.map((msg) => (
                 <div key={msg.id} className={cn("flex gap-3", msg.sender === "user" && "flex-row-reverse")}>
                   <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", msg.sender === "bot" ? "bg-gradient-to-br from-primary to-accent" : "bg-primary")}>
@@ -159,14 +170,14 @@ const HeroChatInterface = () => {
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
                 disabled={isTyping}
               />
-              <Button type="submit" size="icon" className="h-9 w-9 rounded-full shrink-0" disabled={!input.trim() || isTyping}>
+              <Button type="submit" size="icon" className="h-9 w-9 rounded-full shrink-0 btn-glow" disabled={!input.trim() || isTyping}>
                 <Send className="h-4 w-4" />
               </Button>
             </form>
           </div>
 
-          {/* CTA buttons below chat */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4 animate-fade-in">
+          {/* CTA buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3 animate-fade-in">
             <Button size="lg" className="px-8 shadow-elegant btn-glow" onClick={() => navigate("/shop")}>
               <ShoppingBag className="mr-2 h-5 w-5" />
               Shop Now

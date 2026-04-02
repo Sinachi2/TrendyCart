@@ -266,7 +266,7 @@ const DashboardOrders = () => {
                       </TableHeader>
                       <TableBody>
                         {filtered.map((order, idx) => (
-                          <TableRow key={order.id} className={idx % 2 === 0 ? "bg-background" : "bg-muted/10"}>
+                          <TableRow key={order.id} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-muted/40 transition-colors")}>
                             <TableCell className="font-mono text-xs">#{order.id.slice(0, 8).toUpperCase()}</TableCell>
                             <TableCell>
                               <p className="font-medium text-sm">{order.profiles?.full_name || "Anonymous"}</p>
