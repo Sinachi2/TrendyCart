@@ -407,8 +407,8 @@ const ChatWidget = () => {
                   <div
                     className={cn(
                       "h-7 w-7 rounded-full flex items-center justify-center shrink-0",
-                      message.sender === "bot"
-                        ? "bg-gradient-to-r from-pink-500 to-orange-500"
+                    message.sender === "bot"
+                        ? "bg-gradient-to-br from-primary to-accent"
                         : "bg-primary"
                     )}
                   >
