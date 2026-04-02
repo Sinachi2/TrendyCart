@@ -347,9 +347,10 @@ const ChatWidget = () => {
       <div
         className={cn(
           "fixed bottom-36 lg:bottom-24 right-5 z-50 w-[380px] max-w-[calc(100vw-2.5rem)]",
+          "max-h-[min(540px,70vh)]",
           "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl",
           "shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
-          "transition-all duration-500 ease-out overflow-hidden",
+          "transition-all duration-500 ease-out overflow-hidden flex flex-col",
           isOpen
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-90 translate-y-8 pointer-events-none"
