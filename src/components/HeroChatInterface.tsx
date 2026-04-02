@@ -73,12 +73,13 @@ const HeroChatInterface = () => {
     <section className="relative min-h-[92vh] flex items-center overflow-hidden">
       {/* Background image */}
       <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" width={1920} height={1080} />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-background/60 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/50 to-background" />
 
-      {/* Floating glow orbs */}
+      {/* Animated floating glow orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-[10%] w-72 h-72 rounded-full bg-primary/20 blur-[120px] animate-pulse-soft" />
-        <div className="absolute bottom-20 right-[15%] w-60 h-60 rounded-full bg-accent/20 blur-[100px] animate-pulse-soft" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-20 left-[10%] w-96 h-96 rounded-full bg-primary/15 blur-[140px] animate-pulse" style={{ animationDuration: "4s" }} />
+        <div className="absolute top-[40%] right-[5%] w-72 h-72 rounded-full bg-accent/15 blur-[120px] animate-pulse" style={{ animationDuration: "5s", animationDelay: "1s" }} />
+        <div className="absolute bottom-10 left-[30%] w-80 h-80 rounded-full bg-primary/10 blur-[130px] animate-pulse" style={{ animationDuration: "6s", animationDelay: "2s" }} />
       </div>
 
       <div className="container mx-auto px-4 relative z-10 py-12">
