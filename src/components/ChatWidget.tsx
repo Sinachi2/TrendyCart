@@ -356,18 +356,18 @@ const ChatWidget = () => {
         )}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-pink-500 to-orange-500 text-white p-4">
+        <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
               <Bot className="h-5 w-5" />
             </div>
             <div>
               <h3 className="font-semibold">TrendyBot AI</h3>
-              <p className="text-xs text-white/80">Powered by AI • Always here to help</p>
+              <p className="text-xs text-primary-foreground/80">Powered by AI • Always here to help</p>
             </div>
             <div className="ml-auto flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs text-white/80">Online</span>
+              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span className="text-xs text-primary-foreground/80">Online</span>
             </div>
           </div>
         </div>
