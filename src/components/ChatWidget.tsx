@@ -347,27 +347,28 @@ const ChatWidget = () => {
       <div
         className={cn(
           "fixed bottom-36 lg:bottom-24 right-5 z-50 w-[380px] max-w-[calc(100vw-2.5rem)]",
+          "max-h-[min(540px,70vh)]",
           "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl",
           "shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
-          "transition-all duration-500 ease-out overflow-hidden",
+          "transition-all duration-500 ease-out overflow-hidden flex flex-col",
           isOpen
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-90 translate-y-8 pointer-events-none"
         )}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-pink-500 to-orange-500 text-white p-4">
+        <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
               <Bot className="h-5 w-5" />
             </div>
             <div>
               <h3 className="font-semibold">TrendyBot AI</h3>
-              <p className="text-xs text-white/80">Powered by AI • Always here to help</p>
+              <p className="text-xs text-primary-foreground/80">Powered by AI • Always here to help</p>
             </div>
             <div className="ml-auto flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs text-white/80">Online</span>
+              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              <span className="text-xs text-primary-foreground/80">Online</span>
             </div>
           </div>
         </div>
@@ -406,8 +407,8 @@ const ChatWidget = () => {
                   <div
                     className={cn(
                       "h-7 w-7 rounded-full flex items-center justify-center shrink-0",
-                      message.sender === "bot"
-                        ? "bg-gradient-to-r from-pink-500 to-orange-500"
+                    message.sender === "bot"
+                        ? "bg-gradient-to-br from-primary to-accent"
                         : "bg-primary"
                     )}
                   >
@@ -467,8 +468,8 @@ const ChatWidget = () => {
 
             {isTyping && (
               <div className="flex gap-2">
-                <div className="h-7 w-7 rounded-full bg-gradient-to-r from-pink-500 to-orange-500 flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-white" />
+                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
                   <div className="flex items-center gap-2">

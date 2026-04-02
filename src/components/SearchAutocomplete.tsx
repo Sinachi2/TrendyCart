@@ -143,7 +143,7 @@ const SearchAutocomplete = ({ value, onChange, placeholder = "Search products...
       {/* Dropdown */}
       {showSuggestions && value.length >= 2 && (
         <div className={cn(
-          "absolute top-full left-0 right-0 mt-2 bg-popover border border-border/60 rounded-xl shadow-xl z-50 overflow-hidden",
+          "absolute top-full left-0 right-0 mt-2 bg-popover/95 backdrop-blur-xl border border-border/60 rounded-xl shadow-xl z-50 overflow-hidden",
           "animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 duration-200"
         )}>
           {suggestions.length > 0 ? (
