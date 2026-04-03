@@ -3,6 +3,7 @@ import { Send, Bot, User, Sparkles, ShoppingBag, Package, Palette, Code, Loader2
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface ChatMessage {
   id: string;
@@ -90,39 +91,66 @@ const HeroChatInterface = () => {
         <div className="floating-shape absolute top-[30%] left-[50%] w-[300px] h-[300px] rounded-full bg-accent/5 blur-[120px]" style={{ animationDelay: "1s" }} />
       </div>
 
-      {/* Bottom gradient fade to background */}
+      {/* Bottom gradient fade */}
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
 
       <div className="container mx-auto px-4 relative z-10 py-12">
         <div className="max-w-3xl mx-auto text-center space-y-5">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-2 glass rounded-full"
+          >
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-semibold text-primary">AI-Powered Shopping Assistant</span>
-          </div>
+          </motion.div>
 
           {/* Headline */}
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-[1.1] tracking-tight animate-fade-in">
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-5xl sm:text-6xl md:text-7xl font-extrabold leading-[1.1] tracking-tight"
+          >
             Shop Smarter with
             <span className="block gradient-text mt-1">TrendyBot AI</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto animate-fade-in">
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto"
+          >
             Ask anything about products, track orders, get payment help — your AI assistant is always ready.
-          </p>
+          </motion.p>
 
           {/* Chat Interface */}
-          <div className="mt-6 glass rounded-2xl shadow-elegant overflow-hidden border border-border/30 animate-fade-in max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="mt-6 glass rounded-2xl shadow-elegant overflow-hidden border border-border/30 max-w-2xl mx-auto"
+          >
             {/* Chat messages */}
             <div ref={scrollRef} className="h-[260px] overflow-y-auto p-5 space-y-4">
-              {messages.map((msg) => (
-                <div key={msg.id} className={cn("flex gap-3", msg.sender === "user" && "flex-row-reverse")}>
+              {messages.map((msg, idx) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  className={cn("flex gap-3", msg.sender === "user" && "flex-row-reverse")}
+                >
                   <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", msg.sender === "bot" ? "bg-gradient-to-br from-primary to-accent" : "bg-primary")}>
                     {msg.sender === "bot" ? <Bot className="h-4 w-4 text-primary-foreground" /> : <User className="h-4 w-4 text-primary-foreground" />}
                   </div>
                   <div className={cn("max-w-[80%] rounded-2xl px-4 py-3 text-sm", msg.sender === "bot" ? "bg-muted/80 text-foreground rounded-tl-sm" : "bg-primary text-primary-foreground rounded-tr-sm")}>
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
               {isTyping && (
                 <div className="flex gap-3">
@@ -146,7 +174,7 @@ const HeroChatInterface = () => {
                   <button
                     key={prompt.label}
                     onClick={() => sendMessage(prompt.message)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border/50 bg-background/50 hover:bg-primary/10 hover:border-primary/30 transition-all"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border border-border/50 bg-background/50 hover:bg-primary/10 hover:border-primary/30 transition-all duration-200"
                   >
                     <prompt.icon className="h-3 w-3 text-primary" />
                     {prompt.label}
@@ -174,10 +202,15 @@ const HeroChatInterface = () => {
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-          </div>
+          </motion.div>
 
           {/* CTA buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-3 animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="flex flex-col sm:flex-row gap-3 justify-center pt-3"
+          >
             <Button size="lg" className="px-8 shadow-elegant btn-glow" onClick={() => navigate("/shop")}>
               <ShoppingBag className="mr-2 h-5 w-5" />
               Shop Now
@@ -185,7 +218,7 @@ const HeroChatInterface = () => {
             <Button size="lg" variant="outline" className="px-8 glass border-border/50" onClick={() => navigate("/shop")}>
               Explore Collection
             </Button>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

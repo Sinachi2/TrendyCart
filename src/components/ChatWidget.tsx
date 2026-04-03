@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   id: string;
@@ -58,47 +59,18 @@ const ChatWidget = () => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
-      toast({
-        title: "Copied!",
-        description: `${field} copied to clipboard`,
-      });
+      toast({ title: "Copied!", description: `${field} copied to clipboard` });
       setTimeout(() => setCopiedField(null), 2000);
-    } catch (error) {
-      toast({
-        title: "Failed to copy",
-        description: "Please copy manually",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Failed to copy", description: "Please copy manually", variant: "destructive" });
     }
   };
 
-  // Quick action handlers
-  const goToOrders = useCallback(() => {
-    navigate("/user-dashboard");
-    setIsOpen(false);
-  }, [navigate]);
+  const goToOrders = useCallback(() => { navigate("/user-dashboard"); setIsOpen(false); }, [navigate]);
+  const goToShop = useCallback(() => { navigate("/shop"); setIsOpen(false); }, [navigate]);
+  const goToCart = useCallback(() => { navigate("/cart"); setIsOpen(false); }, [navigate]);
+  const goToContact = useCallback(() => { navigate("/contact"); setIsOpen(false); }, [navigate]);
 
-  const goToShop = useCallback(() => {
-    navigate("/shop");
-    setIsOpen(false);
-  }, [navigate]);
-
-  const goToCart = useCallback(() => {
-    navigate("/cart");
-    setIsOpen(false);
-  }, [navigate]);
-
-  const goToContact = useCallback(() => {
-    navigate("/contact");
-    setIsOpen(false);
-  }, [navigate]);
-
-  const goToCheckout = useCallback(() => {
-    navigate("/checkout");
-    setIsOpen(false);
-  }, [navigate]);
-
-  // Initialize with welcome message when opened
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       setMessages([{
@@ -115,53 +87,36 @@ const ChatWidget = () => {
   }, [isOpen, messages.length, goToShop, goToOrders]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (isOpen && inputRef.current) inputRef.current.focus();
   }, [isOpen]);
 
   const getAIResponse = async (userMessage: string): Promise<{ text: string; showPaymentDetails: boolean; actions?: QuickAction[] }> => {
     try {
       const newHistory = [...conversationHistory, { role: "user", content: userMessage }];
-      
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/trendybot-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({
-          messages: newHistory,
-          userMessage: userMessage,
-        }),
+        body: JSON.stringify({ messages: newHistory, userMessage }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         if (response.status === 429 || response.status === 402) {
-          return { 
-            text: errorData.message || "I'm a bit busy right now. Please try again in a moment!", 
-            showPaymentDetails: false 
-          };
+          return { text: errorData.message || "I'm a bit busy right now. Please try again in a moment!", showPaymentDetails: false };
         }
         throw new Error(errorData.error || "Failed to get response");
       }
 
       const data = await response.json();
-      
-      // Update conversation history
-      setConversationHistory([
-        ...newHistory,
-        { role: "assistant", content: data.message }
-      ]);
+      setConversationHistory([...newHistory, { role: "assistant", content: data.message }]);
 
-      // Determine actions based on response
       let actions: QuickAction[] = [];
       const lowerMessage = userMessage.toLowerCase();
       const lowerResponse = data.message.toLowerCase();
@@ -199,39 +154,28 @@ const ChatWidget = () => {
 
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: content.trim(),
-      sender: "user",
-      timestamp: new Date(),
-    };
-
+    const userMessage: Message = { id: Date.now().toString(), content: content.trim(), sender: "user", timestamp: new Date() };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsTyping(true);
 
     try {
       const response = await getAIResponse(content);
-      
-      const botMessage: Message = {
+      setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         content: response.text,
         sender: "bot",
         timestamp: new Date(),
         actions: response.actions,
         showPaymentDetails: response.showPaymentDetails,
-      };
-      
-      setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
-      const errorMessage: Message = {
+      }]);
+    } catch {
+      setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         content: "Sorry, I'm having trouble connecting. Please try again!",
         sender: "bot",
         timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      }]);
     } finally {
       setIsTyping(false);
     }
@@ -248,8 +192,6 @@ const ChatWidget = () => {
         <CreditCard className="h-4 w-4 text-primary" />
         Payment Methods
       </h4>
-      
-      {/* Bank Transfer */}
       <div className="bg-background/80 p-3 rounded-lg space-y-2">
         <p className="text-xs font-medium text-primary">🏦 Bank Transfer</p>
         <div className="space-y-1.5 text-xs">
@@ -261,17 +203,8 @@ const ChatWidget = () => {
             <span className="text-muted-foreground">Account Name:</span>
             <div className="flex items-center gap-1">
               <span className="font-medium text-[11px]">{PAYMENT_DETAILS.bank.accountName}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-5 w-5"
-                onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountName, "Account Name")}
-              >
-                {copiedField === "Account Name" ? (
-                  <Check className="h-3 w-3 text-green-500" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
+              <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountName, "Account Name")}>
+                {copiedField === "Account Name" ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
               </Button>
             </div>
           </div>
@@ -279,24 +212,13 @@ const ChatWidget = () => {
             <span className="text-muted-foreground">Account No:</span>
             <div className="flex items-center gap-1">
               <span className="font-mono font-medium">{PAYMENT_DETAILS.bank.accountNumber}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-5 w-5"
-                onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountNumber, "Account Number")}
-              >
-                {copiedField === "Account Number" ? (
-                  <Check className="h-3 w-3 text-green-500" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
+              <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => copyToClipboard(PAYMENT_DETAILS.bank.accountNumber, "Account Number")}>
+                {copiedField === "Account Number" ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
               </Button>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Crypto */}
       <div className="bg-background/80 p-3 rounded-lg space-y-2">
         <p className="text-xs font-medium text-primary">💰 Cryptocurrency</p>
         <div className="space-y-1.5 text-xs">
@@ -308,17 +230,8 @@ const ChatWidget = () => {
             <span className="text-muted-foreground">Wallet Address:</span>
             <div className="flex items-center gap-1 bg-muted/50 p-2 rounded">
               <span className="font-mono text-[10px] break-all flex-1">{PAYMENT_DETAILS.crypto.walletAddress}</span>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 shrink-0"
-                onClick={() => copyToClipboard(PAYMENT_DETAILS.crypto.walletAddress, "Wallet Address")}
-              >
-                {copiedField === "Wallet Address" ? (
-                  <Check className="h-3 w-3 text-green-500" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
+              <Button size="icon" variant="ghost" className="h-6 w-6 shrink-0" onClick={() => copyToClipboard(PAYMENT_DETAILS.crypto.walletAddress, "Wallet Address")}>
+                {copiedField === "Wallet Address" ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
               </Button>
             </div>
           </div>
@@ -330,183 +243,141 @@ const ChatWidget = () => {
   return (
     <>
       {/* Chat Button */}
-      <Button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "fixed bottom-20 lg:bottom-8 right-5 z-50 h-14 w-14 rounded-2xl transition-all duration-500",
-          "shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_40px_rgb(0,0,0,0.2)]",
-          "bg-gradient-to-br from-primary to-accent hover:scale-105",
-          isOpen && "rotate-180 from-destructive to-destructive/80"
-        )}
-        size="icon"
+      <motion.div
+        className="fixed bottom-24 lg:bottom-10 right-5 z-50"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        {isOpen ? <X className="h-6 w-6 text-destructive-foreground" /> : <MessageCircle className="h-6 w-6 text-primary-foreground" />}
-      </Button>
+        <Button
+          onClick={() => setIsOpen(!isOpen)}
+          className={cn(
+            "h-14 w-14 rounded-2xl transition-all duration-300",
+            "shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_40px_rgb(0,0,0,0.2)]",
+            "bg-gradient-to-br from-primary to-accent hover:scale-105",
+            isOpen && "rotate-180 from-destructive to-destructive/80"
+          )}
+          size="icon"
+        >
+          {isOpen ? <X className="h-6 w-6 text-destructive-foreground" /> : <MessageCircle className="h-6 w-6 text-primary-foreground" />}
+        </Button>
+      </motion.div>
 
       {/* Chat Window */}
-      <div
-        className={cn(
-          "fixed bottom-36 lg:bottom-24 right-5 z-50 w-[380px] max-w-[calc(100vw-2.5rem)]",
-          "max-h-[min(540px,70vh)]",
-          "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl",
-          "shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
-          "transition-all duration-500 ease-out overflow-hidden flex flex-col",
-          isOpen
-            ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-90 translate-y-8 pointer-events-none"
-        )}
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-              <Bot className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-semibold">TrendyBot AI</h3>
-              <p className="text-xs text-primary-foreground/80">Powered by AI • Always here to help</p>
-            </div>
-            <div className="ml-auto flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
-              <span className="text-xs text-primary-foreground/80">Online</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Recently Asked Questions */}
-        {messages.length <= 1 && (
-          <div className="p-3 border-b border-border/50 bg-muted/30">
-            <p className="text-xs font-medium text-muted-foreground mb-2">🔥 Popular Questions</p>
-            <div className="flex flex-wrap gap-1.5">
-              {RECENTLY_ASKED.map((question) => (
-                <Button
-                  key={question}
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs rounded-full"
-                  onClick={() => sendMessage(question)}
-                >
-                  {question}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Messages */}
-        <ScrollArea className="h-[320px] p-4" ref={scrollRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <div key={message.id}>
-                <div
-                  className={cn(
-                    "flex gap-2",
-                    message.sender === "user" && "flex-row-reverse"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "h-7 w-7 rounded-full flex items-center justify-center shrink-0",
-                    message.sender === "bot"
-                        ? "bg-gradient-to-br from-primary to-accent"
-                        : "bg-primary"
-                    )}
-                  >
-                    {message.sender === "bot" ? (
-                      <Bot className="h-4 w-4 text-white" />
-                    ) : (
-                      <User className="h-4 w-4 text-primary-foreground" />
-                    )}
-                  </div>
-                  <div
-                    className={cn(
-                      "max-w-[85%] rounded-2xl px-4 py-2.5",
-                      message.sender === "bot"
-                        ? "bg-muted text-foreground rounded-tl-sm"
-                        : "bg-primary text-primary-foreground rounded-tr-sm"
-                    )}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    
-                    {/* Payment Details */}
-                    {message.showPaymentDetails && message.sender === "bot" && (
-                      <PaymentDetailsCard />
-                    )}
-                    
-                    {/* Quick Actions */}
-                    {message.actions && message.actions.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {message.actions.map((action, i) => (
-                          <Button
-                            key={i}
-                            variant="secondary"
-                            size="sm"
-                            className="h-7 text-xs rounded-full"
-                            onClick={action.action}
-                          >
-                            {action.icon}
-                            <span className="ml-1">{action.label}</span>
-                          </Button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className={cn(
+              "fixed bottom-40 lg:bottom-28 right-5 z-50 w-[380px] max-w-[calc(100vw-2.5rem)]",
+              "max-h-[min(540px,70vh)]",
+              "bg-background/95 backdrop-blur-xl border border-border/50 rounded-2xl",
+              "shadow-[0_20px_60px_-15px_rgba(0,0,0,0.25)]",
+              "overflow-hidden flex flex-col"
+            )}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-primary to-accent text-primary-foreground p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center">
+                  <Bot className="h-5 w-5" />
                 </div>
-                <p
-                  className={cn(
-                    "text-[10px] text-muted-foreground mt-1",
-                    message.sender === "user" ? "text-right mr-9" : "ml-9"
-                  )}
-                >
-                  {message.timestamp.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                <div>
+                  <h3 className="font-semibold">TrendyBot AI</h3>
+                  <p className="text-xs text-primary-foreground/80">Powered by AI • Always here to help</p>
+                </div>
+                <div className="ml-auto flex items-center gap-1">
+                  <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                  <span className="text-xs text-primary-foreground/80">Online</span>
+                </div>
               </div>
-            ))}
+            </div>
 
-            {isTyping && (
-              <div className="flex gap-2">
-                <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                  <Bot className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">TrendyBot is thinking...</span>
-                  </div>
+            {/* Popular Questions */}
+            {messages.length <= 1 && (
+              <div className="p-3 border-b border-border/50 bg-muted/30">
+                <p className="text-xs font-medium text-muted-foreground mb-2">🔥 Popular Questions</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {RECENTLY_ASKED.map((question) => (
+                    <Button key={question} variant="outline" size="sm" className="h-7 text-xs rounded-full" onClick={() => sendMessage(question)}>
+                      {question}
+                    </Button>
+                  ))}
                 </div>
               </div>
             )}
-          </div>
-        </ScrollArea>
 
-        {/* Input */}
-        <form
-          onSubmit={handleSubmit}
-          className="p-3 border-t border-border bg-background/95 backdrop-blur"
-        >
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask me anything..."
-              className="flex-1 rounded-full bg-muted border-0 focus-visible:ring-1"
-              disabled={isTyping}
-            />
-            <Button
-              type="submit"
-              size="icon"
-              className="rounded-full shrink-0"
-              disabled={!inputValue.trim() || isTyping}
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </form>
-      </div>
+            {/* Messages */}
+            <ScrollArea className="flex-1 min-h-0 p-4" ref={scrollRef}>
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <div key={message.id}>
+                    <div className={cn("flex gap-2", message.sender === "user" && "flex-row-reverse")}>
+                      <div className={cn(
+                        "h-7 w-7 rounded-full flex items-center justify-center shrink-0",
+                        message.sender === "bot" ? "bg-gradient-to-br from-primary to-accent" : "bg-primary"
+                      )}>
+                        {message.sender === "bot" ? <Bot className="h-4 w-4 text-primary-foreground" /> : <User className="h-4 w-4 text-primary-foreground" />}
+                      </div>
+                      <div className={cn(
+                        "max-w-[85%] rounded-2xl px-4 py-2.5",
+                        message.sender === "bot" ? "bg-muted text-foreground rounded-tl-sm" : "bg-primary text-primary-foreground rounded-tr-sm"
+                      )}>
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        {message.showPaymentDetails && message.sender === "bot" && <PaymentDetailsCard />}
+                        {message.actions && message.actions.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {message.actions.map((action, i) => (
+                              <Button key={i} variant="secondary" size="sm" className="h-7 text-xs rounded-full" onClick={action.action}>
+                                {action.icon}
+                                <span className="ml-1">{action.label}</span>
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <p className={cn("text-[10px] text-muted-foreground mt-1", message.sender === "user" ? "text-right mr-9" : "ml-9")}>
+                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                ))}
+
+                {isTyping && (
+                  <div className="flex gap-2">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <Bot className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-xs text-muted-foreground">Thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Input */}
+            <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3 border-t border-border/50 bg-muted/20">
+              <Input
+                ref={inputRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type your message..."
+                className="flex-1 h-9 text-sm rounded-xl border-border/50 bg-background/80"
+                disabled={isTyping}
+              />
+              <Button type="submit" size="icon" className="h-9 w-9 rounded-xl shrink-0" disabled={!inputValue.trim() || isTyping}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
