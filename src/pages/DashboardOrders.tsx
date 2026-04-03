@@ -25,7 +25,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Package, Mail, RefreshCw, Search, Eye, ArrowUpDown } from "lucide-react";
+import { Package, Mail, RefreshCw, Search, Eye, ArrowUpDown, ShoppingCart } from "lucide-react";
 
 interface OrderItem {
   product_name: string;
@@ -52,12 +52,12 @@ interface Order {
 }
 
 const statusOptions = [
-  { value: "pending", label: "Pending", color: "bg-warning/10 text-warning-foreground border-warning/20" },
-  { value: "processing", label: "Processing", color: "bg-primary/10 text-primary border-primary/20" },
-  { value: "shipped", label: "Shipped", color: "bg-accent/10 text-accent-foreground border-accent/20" },
-  { value: "delivered", label: "Delivered", color: "bg-success/10 text-success-foreground border-success/20" },
-  { value: "completed", label: "Completed", color: "bg-success/10 text-success-foreground border-success/20" },
-  { value: "cancelled", label: "Cancelled", color: "bg-destructive/10 text-destructive border-destructive/20" },
+  { value: "pending", label: "Pending", color: "bg-warning/15 text-warning border-warning/30" },
+  { value: "processing", label: "Processing", color: "bg-primary/15 text-primary border-primary/30" },
+  { value: "shipped", label: "Shipped", color: "bg-accent/15 text-accent border-accent/30" },
+  { value: "delivered", label: "Delivered", color: "bg-success/15 text-success border-success/30" },
+  { value: "completed", label: "Completed", color: "bg-success/15 text-success border-success/30" },
+  { value: "cancelled", label: "Cancelled", color: "bg-destructive/15 text-destructive border-destructive/30" },
 ];
 
 const DashboardOrders = () => {
@@ -92,7 +92,6 @@ const DashboardOrders = () => {
 
       if (error) throw error;
 
-      // Fetch product images for order items
       const productIds = new Set<string>();
       (data || []).forEach((order: any) => {
         order.order_items?.forEach((item: any) => {
@@ -160,10 +159,13 @@ const DashboardOrders = () => {
 
   const getStatusBadge = (status: string) => {
     const opt = statusOptions.find((s) => s.value === status);
-    return <Badge variant="outline" className={opt?.color || ""}>{opt?.label || status}</Badge>;
+    return (
+      <Badge variant="outline" className={cn("font-medium capitalize", opt?.color || "")}>
+        {opt?.label || status}
+      </Badge>
+    );
   };
 
-  // Filter & sort
   const filtered = orders
     .filter((o) => {
       const q = searchQuery.toLowerCase();
@@ -186,23 +188,50 @@ const DashboardOrders = () => {
     else { setSortField(field); setSortDir("desc"); }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading...</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
   if (!user || !isAdmin) return null;
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-muted/30 dark:bg-background">
         <AdminSidebar />
-        <div className="flex-1 flex flex-col">
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background px-6">
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur px-4 lg:px-6">
             <SidebarTrigger />
-            <h1 className="text-xl font-semibold">Orders Management</h1>
-            <Button variant="outline" size="sm" onClick={loadOrders} className="ml-auto">
-              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+              <h1 className="text-lg lg:text-xl font-semibold">Orders Management</h1>
+            </div>
+            <Button variant="outline" size="sm" onClick={loadOrders} className="ml-auto gap-2">
+              <RefreshCw className="h-4 w-4" /> Refresh
             </Button>
           </header>
 
-          <main className="flex-1 p-6 space-y-6">
+          <main className="flex-1 p-4 lg:p-6 space-y-5 overflow-auto">
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: "Total Orders", value: orders.length, color: "text-primary" },
+                { label: "Pending", value: orders.filter(o => o.status === "pending").length, color: "text-warning" },
+                { label: "Processing", value: orders.filter(o => o.status === "processing").length, color: "text-primary" },
+                { label: "Completed", value: orders.filter(o => o.status === "completed" || o.status === "delivered").length, color: "text-success" },
+              ].map((stat) => (
+                <Card key={stat.label} className="border-0 shadow-card">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                    <p className={cn("text-2xl font-bold mt-1", stat.color)}>{stat.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
             {/* Filters */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
@@ -211,11 +240,11 @@ const DashboardOrders = () => {
                   placeholder="Search orders, customers, products..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 h-10"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-44">
+                <SelectTrigger className="w-full sm:w-44 h-10">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -227,8 +256,9 @@ const DashboardOrders = () => {
               </Select>
             </div>
 
-            <Card className="border-border/50 shadow-card">
-              <CardHeader className="pb-4">
+            {/* Orders Table */}
+            <Card className="border-0 shadow-card overflow-hidden">
+              <CardHeader className="pb-3 px-4 lg:px-6">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Package className="h-5 w-5 text-primary" />
                   All Orders ({filtered.length})
@@ -236,42 +266,54 @@ const DashboardOrders = () => {
               </CardHeader>
               <CardContent className="p-0">
                 {loadingOrders ? (
-                  <div className="text-center py-12"><p className="text-muted-foreground">Loading orders...</p></div>
+                  <div className="flex items-center justify-center py-16">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  </div>
                 ) : filtered.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-                    <p className="text-muted-foreground">No orders found</p>
+                  <div className="text-center py-16">
+                    <Package className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-muted-foreground font-medium">No orders found</p>
+                    <p className="text-sm text-muted-foreground/60 mt-1">Try adjusting your search or filters</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-muted/30 hover:bg-muted/30">
-                          <TableHead className="w-28">Order ID</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Products</TableHead>
-                          <TableHead>
-                            <button onClick={() => toggleSort("total")} className="flex items-center gap-1 font-medium">
+                        <TableRow className="bg-muted/40 hover:bg-muted/40">
+                          <TableHead className="w-28 font-semibold">Order ID</TableHead>
+                          <TableHead className="font-semibold">Customer</TableHead>
+                          <TableHead className="font-semibold">Products</TableHead>
+                          <TableHead className="font-semibold">
+                            <button onClick={() => toggleSort("total")} className="flex items-center gap-1 hover:text-foreground transition-colors">
                               Total <ArrowUpDown className="h-3.5 w-3.5" />
                             </button>
                           </TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>
-                            <button onClick={() => toggleSort("date")} className="flex items-center gap-1 font-medium">
+                          <TableHead className="font-semibold">Status</TableHead>
+                          <TableHead className="font-semibold">
+                            <button onClick={() => toggleSort("date")} className="flex items-center gap-1 hover:text-foreground transition-colors">
                               Date <ArrowUpDown className="h-3.5 w-3.5" />
                             </button>
                           </TableHead>
-                          <TableHead>Update</TableHead>
-                          <TableHead className="w-16">View</TableHead>
+                          <TableHead className="font-semibold">Update</TableHead>
+                          <TableHead className="w-16 font-semibold">View</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filtered.map((order, idx) => (
-                          <TableRow key={order.id} className={cn(idx % 2 === 0 ? "bg-background" : "bg-muted/20", "hover:bg-muted/40 transition-colors")}>
-                            <TableCell className="font-mono text-xs">#{order.id.slice(0, 8).toUpperCase()}</TableCell>
+                          <TableRow
+                            key={order.id}
+                            className={cn(
+                              "transition-colors duration-150",
+                              idx % 2 === 0 ? "bg-background" : "bg-muted/15",
+                              "hover:bg-primary/5"
+                            )}
+                          >
+                            <TableCell className="font-mono text-xs font-medium">
+                              #{order.id.slice(0, 8).toUpperCase()}
+                            </TableCell>
                             <TableCell>
                               <p className="font-medium text-sm">{order.profiles?.full_name || "Anonymous"}</p>
-                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                 <Mail className="h-3 w-3" />{order.profiles?.email || "N/A"}
                               </p>
                             </TableCell>
@@ -282,22 +324,26 @@ const DashboardOrders = () => {
                                     <img
                                       src={item.products?.image_url || "/placeholder.svg"}
                                       alt={item.product_name}
-                                      className="h-8 w-8 rounded object-cover border border-border/50"
+                                      className="h-9 w-9 rounded-lg object-cover border border-border/50 bg-muted"
                                     />
                                     <div className="min-w-0">
                                       <p className="text-xs font-medium truncate">{item.product_name}</p>
-                                      <p className="text-[10px] text-muted-foreground">×{item.quantity}</p>
+                                      <p className="text-[10px] text-muted-foreground">×{item.quantity} · ${item.subtotal.toFixed(2)}</p>
                                     </div>
                                   </div>
                                 ))}
                                 {order.order_items.length > 2 && (
-                                  <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 2} more</p>
+                                  <p className="text-[10px] text-muted-foreground">+{order.order_items.length - 2} more items</p>
                                 )}
                               </div>
                             </TableCell>
-                            <TableCell className="font-semibold">${parseFloat(String(order.total_amount)).toFixed(2)}</TableCell>
+                            <TableCell className="font-semibold text-sm">
+                              ${parseFloat(String(order.total_amount)).toFixed(2)}
+                            </TableCell>
                             <TableCell>{getStatusBadge(order.status)}</TableCell>
-                            <TableCell className="text-sm">{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {new Date(order.created_at).toLocaleDateString()}
+                            </TableCell>
                             <TableCell>
                               <Select
                                 value={order.status}
@@ -318,7 +364,7 @@ const DashboardOrders = () => {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-primary/10"
                                 onClick={() => navigate(`/dashboard/orders/${order.id}`)}
                               >
                                 <Eye className="h-4 w-4" />
