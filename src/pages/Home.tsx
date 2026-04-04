@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import HeroChatInterface from "@/components/HeroChatInterface";
+import HeroSection from "@/components/HeroSection";
 import FeaturedCarousel from "@/components/FeaturedCarousel";
 import DealsSection from "@/components/DealsSection";
 import FeaturedCategories from "@/components/FeaturedCategories";
@@ -37,7 +37,7 @@ const Home = () => {
       <Navbar />
 
       {/* Hero */}
-      <HeroChatInterface />
+      <HeroSection />
 
       {/* Value Props */}
       <motion.section
