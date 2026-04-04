@@ -37,7 +37,7 @@ const Home = () => {
       <Navbar />
 
       {/* Hero */}
-      <HeroChatInterface />
+      <HeroSection />
 
       {/* Value Props */}
       <motion.section
