@@ -38,7 +38,7 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <section className="relative min-h-[75vh] flex items-start overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
       {/* Soft decorative blobs */}
       <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/8 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-accent/8 blur-[120px] pointer-events-none" />
@@ -53,7 +53,7 @@ const HeroSection = () => {
         }}
       />
 
-      <div className="container mx-auto px-4 relative z-10 py-16">
+      <div className="container mx-auto px-4 relative z-10 pt-6 pb-16 md:pt-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Text content */}
           <div className="space-y-8 max-w-xl">
