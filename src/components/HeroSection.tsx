@@ -3,10 +3,39 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface HeroProduct {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string | null;
+}
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const [products, setProducts] = useState<HeroProduct[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id, name, price, image_url")
+        .not("image_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(4);
+      if (data) setProducts(data);
+    })();
+  }, []);
+
+  const accents = [
+    "from-primary/20 to-primary/5",
+    "from-accent/20 to-accent/5",
+    "from-success/20 to-success/5",
+    "from-warning/20 to-warning/5",
+  ];
 
   return (
     <section className="relative min-h-[85vh] flex items-center overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5">
@@ -98,25 +127,39 @@ const HeroSection = () => {
             transition={{ duration: 0.7, delay: 0.3 }}
             className="hidden lg:grid grid-cols-2 gap-4"
           >
-            {[
-              { title: "Premium Headphones", price: "$299", color: "from-primary/20 to-primary/5", delay: 0.4 },
-              { title: "Smart Watch Pro", price: "$199", color: "from-accent/20 to-accent/5", delay: 0.5 },
-              { title: "Wireless Earbuds", price: "$149", color: "from-success/20 to-success/5", delay: 0.6 },
-              { title: "Laptop Stand", price: "$79", color: "from-warning/20 to-warning/5", delay: 0.7 },
-            ].map((item, i) => (
+            {(products.length > 0
+              ? products
+              : Array.from({ length: 4 }).map((_, i) => ({
+                  id: `placeholder-${i}`,
+                  name: "Featured Product",
+                  price: 0,
+                  image_url: null as string | null,
+                }))
+            ).map((product, i) => (
               <motion.div
-                key={item.title}
+                key={product.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: item.delay }}
-                className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 hover-lift cursor-pointer border border-border/30`}
-                onClick={() => navigate("/shop")}
+                transition={{ duration: 0.5, delay: 0.4 + i * 0.1 }}
+                className={`bg-gradient-to-br ${accents[i % accents.length]} rounded-2xl p-4 hover-lift cursor-pointer border border-border/30`}
+                onClick={() => products.length > 0 && navigate(`/product/${product.id}`)}
               >
-                <div className="h-24 w-full rounded-xl bg-background/50 mb-4 flex items-center justify-center">
-                  <ShoppingBag className="h-8 w-8 text-muted-foreground/40" />
+                <div className="aspect-square w-full rounded-xl bg-background/60 mb-3 flex items-center justify-center overflow-hidden">
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <ShoppingBag className="h-8 w-8 text-muted-foreground/40" />
+                  )}
                 </div>
-                <h3 className="font-semibold text-sm text-foreground">{item.title}</h3>
-                <p className="text-primary font-bold mt-1">{item.price}</p>
+                <h3 className="font-semibold text-sm text-foreground line-clamp-1">{product.name}</h3>
+                {product.price > 0 && (
+                  <p className="text-primary font-bold mt-1">${product.price.toFixed(2)}</p>
+                )}
               </motion.div>
             ))}
           </motion.div>
