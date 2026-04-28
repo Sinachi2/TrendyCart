@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,37 +12,50 @@ import ChatWidget from "@/components/ChatWidget";
 import BackToTop from "@/components/BackToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ExitIntentPopup from "@/components/ExitIntentPopup";
+
+// Eagerly load Home (most common landing) for fast first paint
 import Home from "./pages/Home";
-import Shop from "./pages/Shop";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Dashboard from "./pages/Dashboard";
-import DashboardProducts from "./pages/DashboardProducts";
-import DashboardOrders from "./pages/DashboardOrders";
-import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import Orders from "./pages/Orders";
-import OrderConfirmation from "./pages/OrderConfirmation";
-import Profile from "./pages/Profile";
-import Wishlist from "./pages/Wishlist";
-import Auth from "./pages/Auth";
-import UserDashboard from "./pages/UserDashboard";
-import DashboardUserOrders from "./pages/DashboardUserOrders";
-import DashboardUserPayments from "./pages/DashboardUserPayments";
-import DashboardNotifications from "./pages/DashboardNotifications";
-import DashboardUserProfile from "./pages/DashboardUserProfile";
-import Compare from "./pages/Compare";
-import DashboardCoupons from "./pages/DashboardCoupons";
-import SharedWishlist from "./pages/SharedWishlist";
-import EditProfile from "./pages/EditProfile";
-import ViewOrders from "./pages/ViewOrders";
-import DashboardCustomers from "./pages/DashboardCustomers";
-import DashboardAnalytics from "./pages/DashboardAnalytics";
-import DashboardPayments from "./pages/DashboardPayments";
-import NotFound from "./pages/NotFound";
+
+// Code-split all other routes to shrink the main bundle
+const Shop = lazy(() => import("./pages/Shop"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const DashboardProducts = lazy(() => import("./pages/DashboardProducts"));
+const DashboardOrders = lazy(() => import("./pages/DashboardOrders"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const Cart = lazy(() => import("./pages/Cart"));
+const Checkout = lazy(() => import("./pages/Checkout"));
+const Orders = lazy(() => import("./pages/Orders"));
+const OrderConfirmation = lazy(() => import("./pages/OrderConfirmation"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
+const Auth = lazy(() => import("./pages/Auth"));
+const UserDashboard = lazy(() => import("./pages/UserDashboard"));
+const DashboardUserOrders = lazy(() => import("./pages/DashboardUserOrders"));
+const DashboardUserPayments = lazy(() => import("./pages/DashboardUserPayments"));
+const DashboardNotifications = lazy(() => import("./pages/DashboardNotifications"));
+const DashboardUserProfile = lazy(() => import("./pages/DashboardUserProfile"));
+const Compare = lazy(() => import("./pages/Compare"));
+const DashboardCoupons = lazy(() => import("./pages/DashboardCoupons"));
+const SharedWishlist = lazy(() => import("./pages/SharedWishlist"));
+const EditProfile = lazy(() => import("./pages/EditProfile"));
+const ViewOrders = lazy(() => import("./pages/ViewOrders"));
+const DashboardCustomers = lazy(() => import("./pages/DashboardCustomers"));
+const DashboardAnalytics = lazy(() => import("./pages/DashboardAnalytics"));
+const DashboardPayments = lazy(() => import("./pages/DashboardPayments"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="flex flex-col items-center gap-3">
+      <div className="h-10 w-10 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+      <p className="text-sm text-muted-foreground">Loading…</p>
+    </div>
+  </div>
+);
 
 const App = () => (
   <ThemeProvider defaultTheme="light" storageKey="trendycart-ui-theme">
@@ -52,6 +66,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
@@ -84,6 +99,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
             <ProductCompareBar />
             <ChatWidget />
             <BackToTop />
