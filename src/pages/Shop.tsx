@@ -6,7 +6,7 @@ import ProductQuickView from "@/components/ProductQuickView";
 import ProductHoverCard from "@/components/ProductHoverCard";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { Slider } from "@/components/ui/slider";
-import { Star } from "lucide-react";
+import { Star, Sparkles } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -166,15 +166,26 @@ const Shop = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        {/* Header */}
-        <div className="mb-8 md:mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Shop All Products</h1>
-          <p className="text-muted-foreground text-base md:text-lg">
-            Browse our complete collection of premium products
+
+      {/* Premium hero strip */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 border-b border-border/40">
+        <div className="absolute top-[-30%] right-[-10%] w-[400px] h-[400px] rounded-full bg-primary/8 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-40%] left-[-10%] w-[350px] h-[350px] rounded-full bg-accent/8 blur-[100px] pointer-events-none" />
+        <div className="container mx-auto px-4 py-10 md:py-14 relative">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full mb-4">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-semibold text-primary tracking-wide uppercase">All Products</span>
+          </div>
+          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-3">
+            Shop the <span className="gradient-text">Collection</span>
+          </h1>
+          <p className="text-muted-foreground text-base md:text-lg max-w-2xl">
+            Browse curated picks across categories — filter by price, rating, and deals to find exactly what you love.
           </p>
         </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-8 md:py-10">
 
         {/* Filters - Simplified */}
         <div className="flex flex-col gap-4 mb-6">
