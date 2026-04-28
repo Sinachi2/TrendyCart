@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { Trash2, ShoppingBag, ArrowRight, Sparkles, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -163,38 +163,64 @@ const Cart = () => {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Shopping Cart</h1>
+        <div className="mb-8 animate-fade-in">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs font-medium text-primary mb-3">
+            <ShoppingBag className="h-3 w-3" />
+            Your bag
+          </div>
+          <h1 className="text-3xl lg:text-4xl font-bold gradient-text">Shopping Cart</h1>
+          <p className="text-muted-foreground mt-2">
+            {cartItems.length > 0
+              ? `${cartItems.length} item${cartItems.length !== 1 ? "s" : ""} ready to checkout`
+              : "Items you add will appear here"}
+          </p>
+        </div>
 
         {cartItems.length === 0 ? (
-          <Card className="p-12 text-center">
-            <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <Card className="p-12 text-center border-dashed bg-muted/20">
+            <div className="relative inline-block mb-4">
+              <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+              <ShoppingBag className="h-16 w-16 mx-auto text-primary relative" />
+            </div>
             <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
             <p className="text-muted-foreground mb-6">
-              Add some products to get started!
+              Discover trending products and start shopping today.
             </p>
-            <Button asChild>
-              <Link to="/shop">Continue Shopping</Link>
+            <Button asChild size="lg" className="btn-glow bg-gradient-primary">
+              <Link to="/shop">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Browse Products
+              </Link>
             </Button>
           </Card>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => (
-                <Card key={item.id}>
+              {cartItems.map((item, idx) => (
+                <Card
+                  key={item.id}
+                  className="hover-lift border-border/60 animate-fade-in"
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
                   <CardContent className="p-4">
                     <div className="flex gap-4">
-                      <img
-                        src={item.product.image_url || "/placeholder.svg"}
-                        alt={item.product.name}
-                        className="w-24 h-24 object-cover rounded-md"
-                      />
+                      <Link to={`/product/${item.product.id}`} className="shrink-0">
+                        <img
+                          src={item.product.image_url || "/placeholder.svg"}
+                          alt={item.product.name}
+                          className="w-24 h-24 object-cover rounded-xl border border-border/50 hover:scale-105 transition-transform"
+                        />
+                      </Link>
                       <div className="flex-1">
-                        <h3 className="font-semibold mb-1">
+                        <Link
+                          to={`/product/${item.product.id}`}
+                          className="font-semibold mb-1 block hover:text-primary transition-colors line-clamp-2"
+                        >
                           {item.product.name}
-                        </h3>
+                        </Link>
                         <p className="text-lg font-bold text-primary mb-3">
-                          ${item.product.price}
+                          ${item.product.price.toFixed(2)}
                         </p>
 
                         <div className="flex items-center justify-between">
@@ -245,9 +271,13 @@ const Cart = () => {
 
             {/* Order Summary */}
             <div>
-              <Card className="sticky top-24">
+              <Card className="sticky top-24 border-primary/20 shadow-elegant overflow-hidden">
+                <div className="h-1 bg-gradient-primary" />
                 <CardContent className="p-6 space-y-4">
-                  <h2 className="text-xl font-bold">Order Summary</h2>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-primary" />
+                    Order Summary
+                  </h2>
                   <Separator />
 
                   <div className="space-y-2">
@@ -277,7 +307,7 @@ const Cart = () => {
 
                   <Button
                     onClick={() => navigate("/checkout")}
-                    className="w-full"
+                    className="w-full btn-glow bg-gradient-primary hover:opacity-90"
                     size="lg"
                   >
                     Proceed to Checkout
