@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield, GitCompareArrows } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Heart, Package, Truck, Shield, GitCompareArrows, Sparkles } from "lucide-react";
 import ProductReviews from "@/components/ProductReviews";
 import ProductImageGallery from "@/components/ProductImageGallery";
 import RecentlyViewedProducts from "@/components/RecentlyViewedProducts";
@@ -217,13 +217,13 @@ const ProductDetail = () => {
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
-          className="mb-6"
+          className="mb-6 -ml-2 hover:bg-primary/5 hover:text-primary"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
 
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+        <div className="grid md:grid-cols-2 gap-8 lg:gap-12 animate-fade-in">
           {/* Product Image Gallery */}
           <div className="relative">
             <ProductImageGallery
@@ -241,10 +241,11 @@ const ProductDetail = () => {
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[11px] font-medium text-primary uppercase tracking-wide mb-3">
+                <Sparkles className="h-3 w-3" />
                 {product.category}
-              </p>
-              <h1 className="text-3xl lg:text-4xl font-bold mb-4">
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-bold mb-4 text-balance">
                 {product.name}
               </h1>
               
@@ -372,20 +373,20 @@ const ProductDetail = () => {
             </div>
 
             {/* Features */}
-            <Card className="p-4 bg-muted/50">
+            <Card className="p-4 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/10">
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <Truck className="h-6 w-6 mx-auto mb-2 text-primary" />
-                  <p className="text-xs text-muted-foreground">Free Shipping</p>
-                </div>
-                <div>
-                  <Shield className="h-6 w-6 mx-auto mb-2 text-primary" />
-                  <p className="text-xs text-muted-foreground">Secure Payment</p>
-                </div>
-                <div>
-                  <Package className="h-6 w-6 mx-auto mb-2 text-primary" />
-                  <p className="text-xs text-muted-foreground">Easy Returns</p>
-                </div>
+                {[
+                  { icon: Truck, label: "Free Shipping" },
+                  { icon: Shield, label: "Secure Payment" },
+                  { icon: Package, label: "Easy Returns" },
+                ].map((f) => (
+                  <div key={f.label} className="flex flex-col items-center gap-1.5">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <f.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <p className="text-xs text-muted-foreground font-medium">{f.label}</p>
+                  </div>
+                ))}
               </div>
             </Card>
           </div>
