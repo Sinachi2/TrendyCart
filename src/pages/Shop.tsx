@@ -154,6 +154,8 @@ const Shop = () => {
         return (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0);
       case "rating":
         return (b.averageRating || 0) - (a.averageRating || 0);
+      case "rating-low":
+        return (a.averageRating || 0) - (b.averageRating || 0);
       case "deals":
         // Sort active deals first, then by expiration
         const aIsDeal = a.is_deal_active && a.deal_expires_at;
@@ -217,7 +219,7 @@ const Shop = () => {
               <SearchAutocomplete
                 value={searchQuery}
                 onChange={setSearchQuery}
-                placeholder="Search products..."
+                placeholder='Search products, categories, or rating (try "4 stars", "4+")'
               />
             </div>
             
@@ -244,7 +246,8 @@ const Shop = () => {
                   <SelectItem value="price-low">Price: Low to High</SelectItem>
                   <SelectItem value="price-high">Price: High to Low</SelectItem>
                   <SelectItem value="popular">Popular</SelectItem>
-                  <SelectItem value="rating">Highest Rated</SelectItem>
+                  <SelectItem value="rating">Rating: High to Low</SelectItem>
+                  <SelectItem value="rating-low">Rating: Low to High</SelectItem>
                   <SelectItem value="deals">Limited Time Deals</SelectItem>
                 </SelectContent>
               </Select>
@@ -273,6 +276,47 @@ const Shop = () => {
             >
               ✓ In Stock Only
             </button>
+
+            {/* Rating facet chips */}
+            <div className="hidden sm:block w-px h-8 bg-border/60 mx-1 self-center" />
+            {[
+              { label: "★5", value: 5, query: "5 stars" },
+              { label: "★4+", value: 4, query: "4+ stars" },
+              { label: "★3+", value: 3, query: "3+ stars" },
+            ].map((r) => {
+              const active = minRating === r.value;
+              return (
+                <button
+                  key={r.value}
+                  onClick={() => {
+                    setMinRating(active ? 0 : r.value);
+                    setSortBy("rating");
+                    setSearchQuery(active ? "" : r.query);
+                  }}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    active
+                      ? "bg-warning text-warning-foreground shadow-sm"
+                      : "bg-muted/80 hover:bg-muted text-foreground"
+                  }`}
+                >
+                  <Star className={`h-3.5 w-3.5 ${active ? "fill-current" : "fill-warning text-warning"}`} />
+                  {r.label}
+                </button>
+              );
+            })}
+            {(minRating > 0 || searchQuery) && (
+              <button
+                onClick={() => {
+                  setMinRating(0);
+                  setSearchQuery("");
+                  setShowOnSale(false);
+                  setShowInStock(false);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-all"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         </div>
 
