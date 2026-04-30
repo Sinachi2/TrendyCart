@@ -155,6 +155,8 @@ const Shop = () => {
         return (b.is_new ? 1 : 0) - (a.is_new ? 1 : 0);
       case "rating":
         return (b.averageRating || 0) - (a.averageRating || 0);
+      case "rating-low":
+        return (a.averageRating || 0) - (b.averageRating || 0);
       case "deals":
         // Sort active deals first, then by expiration
         const aIsDeal = a.is_deal_active && a.deal_expires_at;
