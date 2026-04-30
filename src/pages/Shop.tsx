@@ -7,7 +7,6 @@ import ProductHoverCard from "@/components/ProductHoverCard";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { Slider } from "@/components/ui/slider";
 import { Star, Sparkles } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
