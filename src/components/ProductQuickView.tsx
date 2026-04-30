@@ -39,6 +39,7 @@ const ProductQuickView = ({ product, open, onClose }: ProductQuickViewProps) => 
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const { mode } = useCurrency();
 
   useEffect(() => {
     if (user && product) {
@@ -154,18 +155,26 @@ const ProductQuickView = ({ product, open, onClose }: ProductQuickViewProps) => 
             <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
             
             <div className="mb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl font-bold text-primary">${product.price}</span>
-                {product.original_price && (
-                  <span className="text-lg text-muted-foreground line-through">${product.original_price}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-base font-semibold text-foreground/80">{formatNGN(product.price)}</span>
-                {product.original_price && (
-                  <span className="text-sm text-muted-foreground line-through">{formatNGN(product.original_price)}</span>
-                )}
-              </div>
+              {mode !== "ngn" && (
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-bold text-primary">{formatUSD(product.price)}</span>
+                  {product.original_price && (
+                    <span className="text-lg text-muted-foreground line-through">{formatUSD(product.original_price)}</span>
+                  )}
+                </div>
+              )}
+              {mode !== "usd" && (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={mode === "ngn" ? "text-3xl font-bold text-primary" : "text-base font-semibold text-foreground/80"}>
+                    {formatNGN(product.price)}
+                  </span>
+                  {product.original_price && (
+                    <span className={mode === "ngn" ? "text-lg text-muted-foreground line-through" : "text-sm text-muted-foreground line-through"}>
+                      {formatNGN(product.original_price)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {stockStatus && (

@@ -17,7 +17,8 @@ import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { formatNGN } from "@/lib/currency";
+import { formatNGN, formatUSD } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Product {
   id: string;
