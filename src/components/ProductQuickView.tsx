@@ -12,7 +12,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { formatNGN } from "@/lib/currency";
+import { formatNGN, formatUSD } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Product {
   id: string;

@@ -33,6 +33,7 @@ const ProductHoverCard = ({
   reviewCount = 0,
   image,
 }: ProductHoverCardProps) => {
+  const { mode } = useCurrency();
   const discount = originalPrice
     ? Math.round(((originalPrice - price) / originalPrice) * 100)
     : 0;
@@ -114,22 +115,28 @@ const ProductHoverCard = ({
           {/* Price & Stock */}
           <div className="flex items-center justify-between pt-2 border-t border-border/50">
             <div className="space-y-0.5">
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-primary">${price}</span>
-                {originalPrice && (
-                  <span className="text-sm text-muted-foreground line-through">
-                    ${originalPrice}
+              {mode !== "ngn" && (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-bold text-primary">{formatUSD(price)}</span>
+                  {originalPrice && (
+                    <span className="text-sm text-muted-foreground line-through">
+                      {formatUSD(originalPrice)}
+                    </span>
+                  )}
+                </div>
+              )}
+              {mode !== "usd" && (
+                <div className={mode === "ngn" ? "flex items-baseline gap-2" : "text-xs font-medium text-foreground/70"}>
+                  <span className={mode === "ngn" ? "text-xl font-bold text-primary" : ""}>
+                    {formatNGN(price)}
                   </span>
-                )}
-              </div>
-              <div className="text-xs font-medium text-foreground/70">
-                {formatNGN(price)}
-                {originalPrice && (
-                  <span className="ml-1 text-muted-foreground line-through">
-                    {formatNGN(originalPrice)}
-                  </span>
-                )}
-              </div>
+                  {originalPrice && (
+                    <span className={mode === "ngn" ? "text-sm text-muted-foreground line-through" : "ml-1 text-muted-foreground line-through"}>
+                      {formatNGN(originalPrice)}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             {stockStatus && (
