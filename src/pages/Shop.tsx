@@ -110,7 +110,29 @@ const Shop = () => {
 
   // Filter products
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const query = searchQuery.trim().toLowerCase();
+    let matchesSearch = true;
+    if (query) {
+      const nameMatch = product.name.toLowerCase().includes(query);
+      const categoryMatch = product.category.toLowerCase().includes(query);
+      const descMatch = product.description?.toLowerCase().includes(query) ?? false;
+
+      // Rating search: match queries like "4", "4+", "4 stars", "4star", "rating 4"
+      const ratingMatch = (() => {
+        const ratingRegex = /(\d(?:\.\d)?)\s*\+?\s*(?:star|stars|rating)?/;
+        const m = query.match(ratingRegex);
+        if (!m) return false;
+        // Only treat as rating search if the query mentions star/rating, OR is just a single small number
+        const mentionsRating = /star|rating/.test(query);
+        const isJustNumber = /^\d(?:\.\d)?\+?$/.test(query);
+        if (!mentionsRating && !isJustNumber) return false;
+        const target = parseFloat(m[1]);
+        if (isNaN(target) || target < 0 || target > 5) return false;
+        return (product.averageRating || 0) >= target;
+      })();
+
+      matchesSearch = nameMatch || categoryMatch || descMatch || ratingMatch;
+    }
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
     const matchesRating = (product.averageRating || 0) >= minRating;
