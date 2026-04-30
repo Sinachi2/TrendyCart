@@ -5,6 +5,7 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
+import { formatNGN } from "@/lib/currency";
 
 interface ProductHoverCardProps {
   children: React.ReactNode;
@@ -111,13 +112,23 @@ const ProductHoverCard = ({
 
           {/* Price & Stock */}
           <div className="flex items-center justify-between pt-2 border-t border-border/50">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold text-primary">${price}</span>
-              {originalPrice && (
-                <span className="text-sm text-muted-foreground line-through">
-                  ${originalPrice}
-                </span>
-              )}
+            <div className="space-y-0.5">
+              <div className="flex items-baseline gap-2">
+                <span className="text-xl font-bold text-primary">${price}</span>
+                {originalPrice && (
+                  <span className="text-sm text-muted-foreground line-through">
+                    ${originalPrice}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs font-medium text-foreground/70">
+                {formatNGN(price)}
+                {originalPrice && (
+                  <span className="ml-1 text-muted-foreground line-through">
+                    {formatNGN(originalPrice)}
+                  </span>
+                )}
+              </div>
             </div>
 
             {stockStatus && (
