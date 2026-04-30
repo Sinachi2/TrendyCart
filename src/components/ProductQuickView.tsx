@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { formatNGN } from "@/lib/currency";
 
 interface Product {
   id: string;
@@ -151,11 +152,19 @@ const ProductQuickView = ({ product, open, onClose }: ProductQuickViewProps) => 
             <p className="text-sm text-muted-foreground mb-1">{product.category}</p>
             <h2 className="text-2xl font-bold mb-2">{product.name}</h2>
             
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl font-bold text-primary">${product.price}</span>
-              {product.original_price && (
-                <span className="text-lg text-muted-foreground line-through">${product.original_price}</span>
-              )}
+            <div className="mb-4">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold text-primary">${product.price}</span>
+                {product.original_price && (
+                  <span className="text-lg text-muted-foreground line-through">${product.original_price}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-base font-semibold text-foreground/80">{formatNGN(product.price)}</span>
+                {product.original_price && (
+                  <span className="text-sm text-muted-foreground line-through">{formatNGN(product.original_price)}</span>
+                )}
+              </div>
             </div>
 
             {stockStatus && (
