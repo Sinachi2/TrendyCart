@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { LanguageProvider } from "@/hooks/useLanguage";
 import { ProductCompareProvider } from "@/contexts/ProductCompareContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import ProductCompareBar from "@/components/ProductCompareBar";
 import ChatWidget from "@/components/ChatWidget";
 import BackToTop from "@/components/BackToTop";
@@ -62,6 +63,7 @@ const App = () => (
     <LanguageProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <CurrencyProvider>
         <ProductCompareProvider>
           <Toaster />
           <Sonner />
@@ -107,6 +109,7 @@ const App = () => (
             <ExitIntentPopup />
           </BrowserRouter>
         </ProductCompareProvider>
+        </CurrencyProvider>
       </TooltipProvider>
     </QueryClientProvider>
     </LanguageProvider>
