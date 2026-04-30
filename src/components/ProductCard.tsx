@@ -48,6 +48,7 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { mode } = useCurrency();
   const navigate = useNavigate();
   const { addToCompare, removeFromCompare, isInCompare } = useProductCompare();
   const [isWishlisted, setIsWishlisted] = useState(false);
@@ -360,22 +361,32 @@ const ProductCard = ({
         
         {/* Price */}
         <div className="space-y-0.5">
-          <div className="flex items-baseline gap-2">
-            <span className="text-xl font-bold text-primary">${price.toFixed(2)}</span>
-            {originalPrice && originalPrice > price && (
-              <span className="text-sm text-muted-foreground line-through">
-                ${originalPrice.toFixed(2)}
+          {mode !== "ngn" && (
+            <div className="flex items-baseline gap-2">
+              <span className="text-xl font-bold text-primary">{formatUSD(price)}</span>
+              {originalPrice && originalPrice > price && (
+                <span className="text-sm text-muted-foreground line-through">
+                  {formatUSD(originalPrice)}
+                </span>
+              )}
+            </div>
+          )}
+          {mode !== "usd" && (
+            <div className="flex items-baseline gap-2">
+              <span className={cn(
+                mode === "ngn" ? "text-xl font-bold text-primary" : "text-sm font-semibold text-foreground/80"
+              )}>
+                {formatNGN(price)}
               </span>
-            )}
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold text-foreground/80">{formatNGN(price)}</span>
-            {originalPrice && originalPrice > price && (
-              <span className="text-xs text-muted-foreground line-through">
-                {formatNGN(originalPrice)}
-              </span>
-            )}
-          </div>
+              {originalPrice && originalPrice > price && (
+                <span className={cn(
+                  mode === "ngn" ? "text-sm text-muted-foreground line-through" : "text-xs text-muted-foreground line-through"
+                )}>
+                  {formatNGN(originalPrice)}
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
       
