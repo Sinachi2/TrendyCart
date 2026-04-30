@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
 import CountdownTimer from "@/components/CountdownTimer";
 import { cn } from "@/lib/utils";
-import { formatNGN } from "@/lib/currency";
+import { formatNGN, formatUSD } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface ProductCardProps {
   id: string;
