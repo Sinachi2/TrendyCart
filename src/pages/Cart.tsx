@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatNGN } from "@/lib/currency";
 
 interface CartItem {
   id: string;
@@ -219,8 +220,11 @@ const Cart = () => {
                         >
                           {item.product.name}
                         </Link>
-                        <p className="text-lg font-bold text-primary mb-3">
+                        <p className="text-lg font-bold text-primary mb-0.5">
                           ${item.product.price.toFixed(2)}
+                        </p>
+                        <p className="text-sm font-medium text-foreground/70 mb-3">
+                          {formatNGN(item.product.price)}
                         </p>
 
                         <div className="flex items-center justify-between">
@@ -283,12 +287,18 @@ const Cart = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
-                      <span className="font-medium">${subtotal.toFixed(2)}</span>
+                      <span className="font-medium text-right">
+                        ${subtotal.toFixed(2)}
+                        <span className="block text-xs text-muted-foreground">{formatNGN(subtotal)}</span>
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Shipping</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-right">
                         {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                        {shipping > 0 && (
+                          <span className="block text-xs text-muted-foreground">{formatNGN(shipping)}</span>
+                        )}
                       </span>
                     </div>
                     {subtotal <= 50 && (
@@ -300,9 +310,12 @@ const Cart = () => {
 
                   <Separator />
 
-                  <div className="flex justify-between text-lg font-bold">
+                  <div className="flex justify-between items-start text-lg font-bold">
                     <span>Total</span>
-                    <span className="text-primary">${total.toFixed(2)}</span>
+                    <span className="text-primary text-right">
+                      ${total.toFixed(2)}
+                      <span className="block text-sm font-semibold text-foreground/70">{formatNGN(total)}</span>
+                    </span>
                   </div>
 
                   <Button

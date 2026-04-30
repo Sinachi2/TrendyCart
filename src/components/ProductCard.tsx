@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
 import CountdownTimer from "@/components/CountdownTimer";
 import { cn } from "@/lib/utils";
+import { formatNGN } from "@/lib/currency";
 
 interface ProductCardProps {
   id: string;
@@ -357,13 +358,23 @@ const ProductCard = ({
         )}
         
         {/* Price */}
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-bold text-primary">${price.toFixed(2)}</span>
-          {originalPrice && originalPrice > price && (
-            <span className="text-sm text-muted-foreground line-through">
-              ${originalPrice.toFixed(2)}
-            </span>
-          )}
+        <div className="space-y-0.5">
+          <div className="flex items-baseline gap-2">
+            <span className="text-xl font-bold text-primary">${price.toFixed(2)}</span>
+            {originalPrice && originalPrice > price && (
+              <span className="text-sm text-muted-foreground line-through">
+                ${originalPrice.toFixed(2)}
+              </span>
+            )}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-sm font-semibold text-foreground/80">{formatNGN(price)}</span>
+            {originalPrice && originalPrice > price && (
+              <span className="text-xs text-muted-foreground line-through">
+                {formatNGN(originalPrice)}
+              </span>
+            )}
+          </div>
         </div>
       </CardContent>
       

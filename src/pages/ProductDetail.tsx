@@ -17,6 +17,7 @@ import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
+import { formatNGN } from "@/lib/currency";
 
 interface Product {
   id: string;
@@ -260,20 +261,32 @@ const ProductDetail = () => {
                 </div>
               )}
               
-              <div className="flex items-center gap-3 mb-6">
-                <span className="text-3xl font-bold text-primary">
-                  ${product.price}
-                </span>
-                {product.original_price && (
-                  <>
-                    <span className="text-xl text-muted-foreground line-through">
-                      ${product.original_price}
+              <div className="mb-6">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-3xl font-bold text-primary">
+                    ${product.price}
+                  </span>
+                  {product.original_price && (
+                    <>
+                      <span className="text-xl text-muted-foreground line-through">
+                        ${product.original_price}
+                      </span>
+                      <Badge variant="secondary" className="text-sm bg-destructive/10 text-destructive">
+                        Save ${(product.original_price - product.price).toFixed(2)}
+                      </Badge>
+                    </>
+                  )}
+                </div>
+                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <span className="text-lg font-semibold text-foreground/80">
+                    {formatNGN(product.price)}
+                  </span>
+                  {product.original_price && (
+                    <span className="text-base text-muted-foreground line-through">
+                      {formatNGN(product.original_price)}
                     </span>
-                    <Badge variant="secondary" className="text-sm bg-destructive/10 text-destructive">
-                      Save ${(product.original_price - product.price).toFixed(2)}
-                    </Badge>
-                  </>
-                )}
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 mb-6">
