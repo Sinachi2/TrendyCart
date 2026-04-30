@@ -19,6 +19,7 @@ import { CartSidebar } from "@/components/CartSidebar";
 import NotificationBell from "@/components/NotificationBell";
 import ThemeToggle from "@/components/ThemeToggle";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import CurrencyToggle from "@/components/CurrencyToggle";
 import SearchAutocomplete from "@/components/SearchAutocomplete";
 import { cn } from "@/lib/utils";
 
@@ -171,6 +172,7 @@ const Navbar = () => {
           {/* User Actions */}
           <div className="flex items-center gap-1 sm:gap-2">
             <LanguageSwitcher />
+            <CurrencyToggle />
             <ThemeToggle />
             {user && <NotificationBell />}
             

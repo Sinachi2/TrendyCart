@@ -9,7 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatNGN } from "@/lib/currency";
+import { formatNGN, formatUSD } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface CartItem {
   id: string;
@@ -26,6 +27,7 @@ interface CartItem {
 
 const Cart = () => {
   const navigate = useNavigate();
+  const { mode } = useCurrency();
   const { user } = useAuth();
   const { toast } = useToast();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -220,12 +222,16 @@ const Cart = () => {
                         >
                           {item.product.name}
                         </Link>
-                        <p className="text-lg font-bold text-primary mb-0.5">
-                          ${item.product.price.toFixed(2)}
-                        </p>
-                        <p className="text-sm font-medium text-foreground/70 mb-3">
-                          {formatNGN(item.product.price)}
-                        </p>
+                        {mode !== "ngn" && (
+                          <p className="text-lg font-bold text-primary mb-0.5">
+                            {formatUSD(item.product.price)}
+                          </p>
+                        )}
+                        {mode !== "usd" && (
+                          <p className={mode === "ngn" ? "text-lg font-bold text-primary mb-3" : "text-sm font-medium text-foreground/70 mb-3"}>
+                            {formatNGN(item.product.price)}
+                          </p>
+                        )}
 
                         <div className="flex items-center justify-between">
                           <div className="flex items-center border border-border rounded-md">
@@ -288,22 +294,29 @@ const Cart = () => {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
                       <span className="font-medium text-right">
-                        ${subtotal.toFixed(2)}
-                        <span className="block text-xs text-muted-foreground">{formatNGN(subtotal)}</span>
+                        {mode !== "ngn" && <>{formatUSD(subtotal)}</>}
+                        {mode === "both" && (
+                          <span className="block text-xs text-muted-foreground">{formatNGN(subtotal)}</span>
+                        )}
+                        {mode === "ngn" && <>{formatNGN(subtotal)}</>}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Shipping</span>
                       <span className="font-medium text-right">
-                        {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
-                        {shipping > 0 && (
+                        {shipping === 0
+                          ? "FREE"
+                          : mode === "ngn"
+                            ? formatNGN(shipping)
+                            : formatUSD(shipping)}
+                        {shipping > 0 && mode === "both" && (
                           <span className="block text-xs text-muted-foreground">{formatNGN(shipping)}</span>
                         )}
                       </span>
                     </div>
                     {subtotal <= 50 && (
                       <p className="text-xs text-muted-foreground">
-                        Add ${(50 - subtotal).toFixed(2)} more for free shipping
+                        Add {mode === "ngn" ? formatNGN(50 - subtotal) : formatUSD(50 - subtotal)} more for free shipping
                       </p>
                     )}
                   </div>
@@ -313,8 +326,11 @@ const Cart = () => {
                   <div className="flex justify-between items-start text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary text-right">
-                      ${total.toFixed(2)}
-                      <span className="block text-sm font-semibold text-foreground/70">{formatNGN(total)}</span>
+                      {mode !== "ngn" && <>{formatUSD(total)}</>}
+                      {mode === "both" && (
+                        <span className="block text-sm font-semibold text-foreground/70">{formatNGN(total)}</span>
+                      )}
+                      {mode === "ngn" && <>{formatNGN(total)}</>}
                     </span>
                   </div>
 

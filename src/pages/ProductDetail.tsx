@@ -17,7 +17,8 @@ import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProductCompare } from "@/contexts/ProductCompareContext";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { formatNGN } from "@/lib/currency";
+import { formatNGN, formatUSD } from "@/lib/currency";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 interface Product {
   id: string;
@@ -36,6 +37,7 @@ interface Product {
 const ProductDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { mode } = useCurrency();
   const { user } = useAuth();
   const { toast } = useToast();
   const { addToCompare, removeFromCompare, isInCompare } = useProductCompare();
@@ -262,31 +264,42 @@ const ProductDetail = () => {
               )}
               
               <div className="mb-6">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-3xl font-bold text-primary">
-                    ${product.price}
-                  </span>
-                  {product.original_price && (
-                    <>
-                      <span className="text-xl text-muted-foreground line-through">
-                        ${product.original_price}
-                      </span>
-                      <Badge variant="secondary" className="text-sm bg-destructive/10 text-destructive">
-                        Save ${(product.original_price - product.price).toFixed(2)}
-                      </Badge>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <span className="text-lg font-semibold text-foreground/80">
-                    {formatNGN(product.price)}
-                  </span>
-                  {product.original_price && (
-                    <span className="text-base text-muted-foreground line-through">
-                      {formatNGN(product.original_price)}
+                {mode !== "ngn" && (
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-3xl font-bold text-primary">
+                      {formatUSD(product.price)}
                     </span>
-                  )}
-                </div>
+                    {product.original_price && (
+                      <>
+                        <span className="text-xl text-muted-foreground line-through">
+                          {formatUSD(product.original_price)}
+                        </span>
+                        <Badge variant="secondary" className="text-sm bg-destructive/10 text-destructive">
+                          Save {formatUSD(product.original_price - product.price)}
+                        </Badge>
+                      </>
+                    )}
+                  </div>
+                )}
+                {mode !== "usd" && (
+                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                    <span className={mode === "ngn" ? "text-3xl font-bold text-primary" : "text-lg font-semibold text-foreground/80"}>
+                      {formatNGN(product.price)}
+                    </span>
+                    {product.original_price && (
+                      <>
+                        <span className={mode === "ngn" ? "text-xl text-muted-foreground line-through" : "text-base text-muted-foreground line-through"}>
+                          {formatNGN(product.original_price)}
+                        </span>
+                        {mode === "ngn" && (
+                          <Badge variant="secondary" className="text-sm bg-destructive/10 text-destructive">
+                            Save {formatNGN(product.original_price - product.price)}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 mb-6">
