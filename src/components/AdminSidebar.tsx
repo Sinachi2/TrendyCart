@@ -4,16 +4,11 @@ import {
   Package,
   ShoppingCart,
   Users,
-  BarChart3,
-  Tag,
-  CreditCard,
   LogOut,
   Store,
-  Bell,
   Search,
   Moon,
   Sun,
-  ChevronDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
