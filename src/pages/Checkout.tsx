@@ -33,6 +33,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isVipEmail } from "@/lib/vip";
 
 const PAYMENT_DETAILS = {
   bank: {
