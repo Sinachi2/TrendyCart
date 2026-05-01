@@ -265,8 +265,9 @@ const Checkout = () => {
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
-  const shipping = selectedSubtotal > 50 ? 0 : 9.99;
-  const total = selectedSubtotal + shipping - discount;
+  const isVip = isVipEmail(user?.email);
+  const shipping = isVip ? 0 : selectedSubtotal > 50 ? 0 : 9.99;
+  const total = isVip ? 0 : Math.max(0, selectedSubtotal + shipping - discount);
 
   const handleCouponApplied = (coupon: Coupon | null, discountAmount: number) => {
     setAppliedCoupon(coupon);
