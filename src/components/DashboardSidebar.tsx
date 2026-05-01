@@ -2,8 +2,6 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Package,
-  CreditCard,
-  Bell,
   User,
   LogOut,
   ChevronLeft,
@@ -30,10 +28,8 @@ interface DashboardSidebarProps {
 const menuItems = [
   { icon: LayoutDashboard, label: "Overview", path: "/user-dashboard" },
   { icon: Package, label: "My Orders", path: "/user-dashboard/orders" },
-  { icon: CreditCard, label: "Payments", path: "/user-dashboard/payments" },
-  { icon: Bell, label: "Notifications", path: "/user-dashboard/notifications" },
-  { icon: Heart, label: "Wishlist", path: "/wishlist" },
   { icon: User, label: "Profile", path: "/user-dashboard/profile" },
+  { icon: Heart, label: "Wishlist", path: "/wishlist" },
 ];
 
 const DashboardSidebar = ({ collapsed = false, onCollapse }: DashboardSidebarProps) => {

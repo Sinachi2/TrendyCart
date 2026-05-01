@@ -1,1 +1,2 @@
 - [VIP Free Orders](mem://features/vip-users) — VIP emails get 100% off + free shipping; sole admin is ezeonyekasinachi@gmail.com
+- [Dashboard Redesign](mem://design/dashboard-redesign) — Clean e-commerce style (Shopify+Stripe), simplified admin/user sidebars, KPI+table layout

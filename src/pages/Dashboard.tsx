@@ -2,30 +2,21 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/AdminSidebar";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ShoppingCart,
   DollarSign,
   Users,
   Package,
   Plus,
-  Eye,
-  Tag,
-  CreditCard,
-  TrendingUp,
   ArrowUpRight,
-  ArrowDownRight,
   Bell,
   Search,
-  Clock,
-  CheckCircle,
-  Truck,
-  XCircle,
-  BarChart3,
+  TrendingUp,
 } from "lucide-react";
 import {
   ChartConfig,
@@ -33,24 +24,24 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import {
-  Area,
-  AreaChart,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Pie,
-  PieChart,
-  Cell,
-  ResponsiveContainer,
-} from "recharts";
+import { Area, AreaChart, XAxis, YAxis, CartesianGrid } from "recharts";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 
+const STATUS_STYLES: Record<string, string> = {
+  pending: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+  processing: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+  shipped: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
+  completed: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  delivered: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+  cancelled: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, loading, isAdmin } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     ordersCount: 0,
@@ -59,10 +50,7 @@ const Dashboard = () => {
     pendingPayments: 0,
   });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [topProducts, setTopProducts] = useState<any[]>([]);
   const [salesData, setSalesData] = useState<any[]>([]);
-  const [orderStatusData, setOrderStatusData] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth");
@@ -72,69 +60,50 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      const [ordersRes, customersRes, productsRes, paymentsRes, orderItemsRes] = await Promise.all([
-        supabase.from("orders").select("id, total_amount, status, created_at, user_id"),
-        supabase.from("profiles").select("id, full_name, created_at"),
-        supabase.from("products").select("id, name, image_url"),
+      const [ordersRes, customersRes, productsRes, paymentsRes] = await Promise.all([
+        supabase.from("orders").select("id, total_amount, status, created_at, user_id").order("created_at", { ascending: false }),
+        supabase.from("profiles").select("id, full_name, email"),
+        supabase.from("products").select("id"),
         supabase.from("payment_proofs").select("id").eq("status", "pending"),
-        supabase.from("order_items").select("product_name, subtotal, quantity"),
       ]);
 
       const orders = ordersRes.data || [];
-      const totalRevenue = orders.reduce((sum, o) => sum + parseFloat(String(o.total_amount || "0")), 0);
+      const profiles = customersRes.data || [];
+      const totalRevenue = orders.reduce((s, o) => s + parseFloat(String(o.total_amount || "0")), 0);
 
       setStats({
         totalRevenue,
         ordersCount: orders.length,
-        customersCount: customersRes.data?.length || 0,
+        customersCount: profiles.length,
         productsCount: productsRes.data?.length || 0,
         pendingPayments: paymentsRes.data?.length || 0,
       });
 
-      // Recent orders
-      setRecentOrders(orders.slice(0, 6));
+      const profileMap = new Map(profiles.map((p) => [p.id, p]));
+      setRecentOrders(
+        orders.slice(0, 7).map((o) => ({ ...o, customer: profileMap.get(o.user_id) }))
+      );
 
-      // Monthly sales
-      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      const monthlyData: Record<string, number> = {};
-      months.forEach(m => monthlyData[m] = 0);
-      orders.forEach(o => {
-        const m = months[new Date(o.created_at).getMonth()];
-        monthlyData[m] += Number(o.total_amount);
+      // Last 7 days revenue
+      const days: { day: string; sales: number }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push({
+          day: d.toLocaleDateString("en-US", { weekday: "short" }),
+          sales: 0,
+        });
+      }
+      orders.forEach((o) => {
+        const created = new Date(o.created_at);
+        const diff = Math.floor((Date.now() - created.getTime()) / (1000 * 60 * 60 * 24));
+        if (diff >= 0 && diff < 7) days[6 - diff].sales += parseFloat(String(o.total_amount || "0"));
       });
-      setSalesData(months.map(m => ({ month: m, sales: Math.round(monthlyData[m]) })));
-
-      // Order status pie
-      const statusCounts: Record<string, number> = { pending: 0, processing: 0, shipped: 0, completed: 0, cancelled: 0 };
-      orders.forEach(o => { if (statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
-      setOrderStatusData([
-        { name: "Pending", value: statusCounts.pending, color: "hsl(var(--warning))" },
-        { name: "Processing", value: statusCounts.processing, color: "hsl(var(--primary))" },
-        { name: "Shipped", value: statusCounts.shipped, color: "hsl(var(--accent))" },
-        { name: "Completed", value: statusCounts.completed, color: "hsl(var(--success))" },
-        { name: "Cancelled", value: statusCounts.cancelled, color: "hsl(var(--destructive))" },
-      ]);
-
-      // Top products
-      const productRevenue: Record<string, { name: string; sales: number; revenue: number }> = {};
-      (orderItemsRes.data || []).forEach(item => {
-        if (!productRevenue[item.product_name]) productRevenue[item.product_name] = { name: item.product_name, sales: 0, revenue: 0 };
-        productRevenue[item.product_name].sales += item.quantity;
-        productRevenue[item.product_name].revenue += Number(item.subtotal);
-      });
-      setTopProducts(Object.values(productRevenue).sort((a, b) => b.revenue - a.revenue).slice(0, 5));
-
-      // Activity
-      const acts = orders.slice(0, 8).map(o => ({
-        id: o.id,
-        title: `Order #${o.id.slice(0, 8)}`,
-        status: o.status,
-        amount: parseFloat(String(o.total_amount)),
-        time: o.created_at,
-      }));
-      setActivities(acts);
+      setSalesData(days);
     } catch (error) {
       console.error("Error loading dashboard data:", error);
+    } finally {
+      setDataLoading(false);
     }
   };
 
@@ -145,327 +114,196 @@ const Dashboard = () => {
       </div>
     );
   }
-
   if (!user || !isAdmin) return null;
 
-  const salesChartConfig: ChartConfig = {
+  const chartConfig: ChartConfig = {
     sales: { label: "Revenue", color: "hsl(var(--primary))" },
   };
 
   const statsData = [
-    { title: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, change: "+20.1%", trend: "up", icon: DollarSign, gradient: "from-emerald-500 to-emerald-600" },
-    { title: "Total Orders", value: stats.ordersCount.toString(), change: "+12.5%", trend: "up", icon: ShoppingCart, gradient: "from-blue-500 to-blue-600" },
-    { title: "Customers", value: stats.customersCount.toString(), change: "+8.2%", trend: "up", icon: Users, gradient: "from-violet-500 to-violet-600" },
-    { title: "Products", value: stats.productsCount.toString(), change: "+3.1%", trend: "up", icon: Package, gradient: "from-amber-500 to-amber-600" },
+    { title: "Total Revenue", value: `$${stats.totalRevenue.toLocaleString(undefined, { maximumFractionDigits: 2 })}`, icon: DollarSign, accent: "bg-emerald-500" },
+    { title: "Orders", value: stats.ordersCount.toLocaleString(), icon: ShoppingCart, accent: "bg-blue-500" },
+    { title: "Customers", value: stats.customersCount.toLocaleString(), icon: Users, accent: "bg-violet-500" },
+    { title: "Products", value: stats.productsCount.toLocaleString(), icon: Package, accent: "bg-amber-500" },
   ];
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed": return <CheckCircle className="h-4 w-4 text-success" />;
-      case "shipped": return <Truck className="h-4 w-4 text-primary" />;
-      case "cancelled": return <XCircle className="h-4 w-4 text-destructive" />;
-      default: return <Clock className="h-4 w-4 text-warning" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-success/10 text-success";
-      case "processing": return "bg-primary/10 text-primary";
-      case "shipped": return "bg-accent/10 text-accent";
-      case "cancelled": return "bg-destructive/10 text-destructive";
-      default: return "bg-warning/10 text-warning";
-    }
-  };
 
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-muted/30 dark:bg-background">
         <AdminSidebar />
-        
+
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Top navbar */}
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur px-6">
+          {/* Top bar */}
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-border bg-background/95 backdrop-blur px-4 lg:px-6">
             <SidebarTrigger />
-            <div className="flex-1 flex items-center gap-4">
-              <div className="relative hidden md:block max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search anything..." className="pl-9 h-9 bg-muted/50" />
-              </div>
+            <div className="relative hidden md:block flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search orders, products, customers..." className="pl-9 h-9 bg-muted/50 border-0" />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               <Button variant="ghost" size="icon" className="relative" asChild>
-                <Link to="/dashboard/payments">
+                <Link to="/dashboard/orders">
                   <Bell className="h-5 w-5" />
                   {stats.pendingPayments > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
+                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold">
                       {stats.pendingPayments}
                     </span>
                   )}
                 </Link>
               </Button>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="rounded-lg">
                 <Link to="/dashboard/products">
                   <Plus className="h-4 w-4 mr-1" />
-                  Add Product
+                  <span className="hidden sm:inline">Add Product</span>
                 </Link>
               </Button>
             </div>
           </header>
 
-          <main className="flex-1 p-4 lg:p-6 space-y-6 overflow-auto">
-            {/* Welcome */}
-            <div>
-              <h1 className="text-2xl font-bold">Dashboard Overview</h1>
-              <p className="text-sm text-muted-foreground">Welcome back! Here's what's happening with your store.</p>
+          <main className="flex-1 p-4 lg:p-8 space-y-6 overflow-auto max-w-[1400px] w-full mx-auto">
+            {/* Greeting */}
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">Good day 👋</h1>
+                <p className="text-sm text-muted-foreground mt-1">Here's a snapshot of your store today.</p>
+              </div>
+              <Badge variant="secondary" className="self-start md:self-auto bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-0 px-3 py-1.5">
+                <TrendingUp className="h-3.5 w-3.5 mr-1.5" />
+                Store healthy
+              </Badge>
             </div>
 
-            {/* Stats Grid - Berry Vue style */}
+            {/* KPI cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {statsData.map((stat) => (
-                <Card key={stat.title} className="overflow-hidden border-0 shadow-card hover:shadow-card-hover transition-shadow duration-300">
+              {statsData.map((s) => (
+                <Card key={s.title} className="border-border/60 hover:shadow-md transition-shadow">
                   <CardContent className="p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`h-11 w-11 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center shadow-lg`}>
-                        <stat.icon className="h-5 w-5 text-white" />
+                    <div className="flex items-start justify-between mb-4">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{s.title}</p>
+                      <div className={`h-9 w-9 rounded-lg ${s.accent} bg-opacity-10 flex items-center justify-center`}>
+                        <s.icon className="h-4 w-4 text-white" />
                       </div>
-                      <Badge variant="secondary" className={`text-xs ${
-                        stat.trend === "up" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-                      }`}>
-                        {stat.trend === "up" ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
-                        {stat.change}
-                      </Badge>
                     </div>
-                    <h3 className="text-2xl font-bold">{stat.value}</h3>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
+                    {dataLoading ? <Skeleton className="h-8 w-24" /> : (
+                      <p className="text-2xl lg:text-3xl font-bold tracking-tight">{s.value}</p>
+                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
 
-            {/* Charts Row */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Sales Overview - 2/3 width */}
-              <Card className="lg:col-span-2 border-0 shadow-card">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-primary" />
-                        Sales Overview
-                      </CardTitle>
-                      <CardDescription>Monthly revenue trend</CardDescription>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/dashboard/analytics">View Details</Link>
-                    </Button>
+            {/* Chart + Quick links */}
+            <div className="grid gap-4 lg:grid-cols-3">
+              <Card className="lg:col-span-2 border-border/60">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle className="text-base">Revenue · last 7 days</CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">Daily sales totals</p>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={salesChartConfig} className="h-[280px] w-full">
-                    <AreaChart data={salesData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="month" className="text-xs" />
-                      <YAxis className="text-xs" />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area type="monotone" dataKey="sales" stroke="hsl(var(--primary))" fill="url(#salesGradient)" strokeWidth={2} />
-                    </AreaChart>
-                  </ChartContainer>
+                  {dataLoading ? <Skeleton className="h-64 w-full" /> : (
+                    <ChartContainer config={chartConfig} className="h-64 w-full">
+                      <AreaChart data={salesData}>
+                        <defs>
+                          <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="day" tickLine={false} axisLine={false} fontSize={12} />
+                        <YAxis tickLine={false} axisLine={false} fontSize={12} width={40} />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Area type="monotone" dataKey="sales" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#rev)" />
+                      </AreaChart>
+                    </ChartContainer>
+                  )}
                 </CardContent>
               </Card>
 
-              {/* Order Status Pie */}
-              <Card className="border-0 shadow-card">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <ShoppingCart className="h-5 w-5 text-primary" />
-                    Order Status
-                  </CardTitle>
-                  <CardDescription>Distribution breakdown</CardDescription>
+              <Card className="border-border/60">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Quick actions</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-[180px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={orderStatusData} cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3} dataKey="value">
-                          {orderStatusData.map((entry, idx) => (
-                            <Cell key={idx} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                    {orderStatusData.map((entry) => (
-                      <div key={entry.name} className="flex items-center gap-1.5 text-xs">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="text-muted-foreground">{entry.name}</span>
-                        <span className="font-semibold">{entry.value}</span>
-                      </div>
-                    ))}
-                  </div>
+                <CardContent className="space-y-2">
+                  {[
+                    { label: "Manage Orders", to: "/dashboard/orders", icon: ShoppingCart },
+                    { label: "Add Product", to: "/dashboard/products", icon: Package },
+                    { label: "View Customers", to: "/dashboard/customers", icon: Users },
+                    { label: "Visit Storefront", to: "/", icon: ArrowUpRight },
+                  ].map((a) => (
+                    <Button key={a.to} variant="ghost" className="w-full justify-start h-11 rounded-lg" asChild>
+                      <Link to={a.to}>
+                        <a.icon className="h-4 w-4 mr-2 text-muted-foreground" />
+                        {a.label}
+                      </Link>
+                    </Button>
+                  ))}
                 </CardContent>
               </Card>
             </div>
 
-            {/* Bottom Row */}
-            <div className="grid gap-6 lg:grid-cols-3">
-              {/* Recent Orders Table */}
-              <Card className="lg:col-span-2 border-0 shadow-card">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Recent Orders</CardTitle>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to="/dashboard/orders">View All</Link>
-                    </Button>
+            {/* Recent Orders Table */}
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center justify-between pb-4">
+                <CardTitle className="text-base">Recent orders</CardTitle>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/dashboard/orders">
+                    View all
+                    <ArrowUpRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                {dataLoading ? (
+                  <div className="p-6 space-y-3">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
                   </div>
-                </CardHeader>
-                <CardContent>
+                ) : recentOrders.length === 0 ? (
+                  <div className="text-center py-12 text-muted-foreground text-sm">
+                    No orders yet.
+                  </div>
+                ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left py-3 px-2 text-muted-foreground font-medium">Order ID</th>
-                          <th className="text-left py-3 px-2 text-muted-foreground font-medium">Date</th>
-                          <th className="text-left py-3 px-2 text-muted-foreground font-medium">Status</th>
-                          <th className="text-right py-3 px-2 text-muted-foreground font-medium">Amount</th>
+                      <thead className="bg-muted/40">
+                        <tr className="text-left text-xs text-muted-foreground uppercase tracking-wider">
+                          <th className="px-6 py-3 font-medium">Order</th>
+                          <th className="px-6 py-3 font-medium">Customer</th>
+                          <th className="px-6 py-3 font-medium">Date</th>
+                          <th className="px-6 py-3 font-medium">Status</th>
+                          <th className="px-6 py-3 font-medium text-right">Total</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {recentOrders.map((order) => (
-                          <tr key={order.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                            <td className="py-3 px-2 font-medium">#{order.id.slice(0, 8)}</td>
-                            <td className="py-3 px-2 text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</td>
-                            <td className="py-3 px-2">
-                              <Badge variant="secondary" className={getStatusColor(order.status)}>
-                                {order.status}
+                      <tbody className="divide-y divide-border/60">
+                        {recentOrders.map((o) => (
+                          <tr key={o.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="px-6 py-3 font-mono text-xs">#{o.id.slice(0, 8)}</td>
+                            <td className="px-6 py-3">
+                              <div className="font-medium truncate max-w-[180px]">
+                                {o.customer?.full_name || o.customer?.email || "Guest"}
+                              </div>
+                            </td>
+                            <td className="px-6 py-3 text-muted-foreground text-xs">
+                              {formatDistanceToNow(new Date(o.created_at), { addSuffix: true })}
+                            </td>
+                            <td className="px-6 py-3">
+                              <Badge variant="outline" className={`capitalize border ${STATUS_STYLES[o.status] || "bg-muted"}`}>
+                                {o.status}
                               </Badge>
                             </td>
-                            <td className="py-3 px-2 text-right font-semibold">${parseFloat(order.total_amount).toFixed(2)}</td>
+                            <td className="px-6 py-3 text-right font-semibold">
+                              ${parseFloat(String(o.total_amount)).toFixed(2)}
+                            </td>
                           </tr>
                         ))}
-                        {recentOrders.length === 0 && (
-                          <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">No orders yet</td></tr>
-                        )}
                       </tbody>
                     </table>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Activity Timeline */}
-              <Card className="border-0 shadow-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    Activity Timeline
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[320px] pr-2">
-                    <div className="relative pl-6">
-                      {/* Vertical line */}
-                      <div className="absolute left-[9px] top-0 bottom-0 w-px bg-border" />
-                      
-                      {activities.map((act, idx) => (
-                        <div key={act.id} className="relative pb-5 last:pb-0">
-                          {/* Dot */}
-                          <div className="absolute -left-[15px] top-1 h-5 w-5 rounded-full bg-background border-2 border-primary flex items-center justify-center">
-                            <div className="h-2 w-2 rounded-full bg-primary" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">{act.title}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className={`text-[10px] ${getStatusColor(act.status)}`}>
-                                {act.status}
-                              </Badge>
-                              <span className="text-xs font-semibold text-primary">${act.amount.toFixed(2)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {formatDistanceToNow(new Date(act.time), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                      {activities.length === 0 && (
-                        <p className="text-muted-foreground text-sm text-center py-4">No activity yet</p>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Top Products & Quick Actions */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Top Products */}
-              <Card className="border-0 shadow-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-primary" />
-                    Top Products
-                  </CardTitle>
-                  <CardDescription>Best sellers by revenue</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {topProducts.map((product, idx) => (
-                      <div key={product.name} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
-                        <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-sm font-bold text-primary">
-                          #{idx + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{product.name}</p>
-                          <p className="text-xs text-muted-foreground">{product.sales} sold</p>
-                        </div>
-                        <p className="font-semibold text-sm">${product.revenue.toFixed(2)}</p>
-                      </div>
-                    ))}
-                    {topProducts.length === 0 && (
-                      <p className="text-muted-foreground text-center py-4 text-sm">No sales data yet</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="border-0 shadow-card">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Quick Actions</CardTitle>
-                  <CardDescription>Common admin tasks</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { label: "Add Product", icon: Plus, href: "/dashboard/products", gradient: "from-primary to-blue-600" },
-                      { label: "View Orders", icon: Eye, href: "/dashboard/orders", gradient: "from-emerald-500 to-emerald-600" },
-                      { label: "Manage Coupons", icon: Tag, href: "/dashboard/coupons", gradient: "from-violet-500 to-violet-600" },
-                      { label: "Verify Payments", icon: CreditCard, href: "/dashboard/payments", gradient: "from-amber-500 to-amber-600", badge: stats.pendingPayments },
-                    ].map((action) => (
-                      <Button key={action.label} asChild variant="outline" className="h-auto py-5 flex-col gap-2 relative hover-lift border-border/50">
-                        <Link to={action.href}>
-                          <div className={`p-2.5 rounded-xl bg-gradient-to-br ${action.gradient} shadow-lg`}>
-                            <action.icon className="h-5 w-5 text-white" />
-                          </div>
-                          <span className="text-sm font-medium">{action.label}</span>
-                          {action.badge !== undefined && action.badge > 0 && (
-                            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
-                              {action.badge}
-                            </Badge>
-                          )}
-                        </Link>
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </main>
         </div>
       </div>

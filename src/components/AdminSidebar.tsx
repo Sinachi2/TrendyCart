@@ -4,16 +4,11 @@ import {
   Package,
   ShoppingCart,
   Users,
-  BarChart3,
-  Tag,
-  CreditCard,
   LogOut,
   Store,
-  Bell,
   Search,
   Moon,
   Sun,
-  ChevronDown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -35,13 +30,10 @@ import { useTheme } from "@/hooks/useTheme";
 import logo from "@/assets/trendycart-logo.png";
 
 const mainMenuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Analytics", url: "/dashboard/analytics", icon: BarChart3 },
-  { title: "Products", url: "/dashboard/products", icon: Package },
+  { title: "Overview", url: "/dashboard", icon: LayoutDashboard },
   { title: "Orders", url: "/dashboard/orders", icon: ShoppingCart },
-  { title: "Payments", url: "/dashboard/payments", icon: CreditCard },
+  { title: "Products", url: "/dashboard/products", icon: Package },
   { title: "Customers", url: "/dashboard/customers", icon: Users },
-  { title: "Coupons", url: "/dashboard/coupons", icon: Tag },
 ];
 
 export function AdminSidebar() {
