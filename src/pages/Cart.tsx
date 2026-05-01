@@ -11,6 +11,7 @@ import Navbar from "@/components/Navbar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatNGN, formatUSD } from "@/lib/currency";
 import { useCurrency } from "@/contexts/CurrencyContext";
+import { isVipEmail } from "@/lib/vip";
 
 interface CartItem {
   id: string;
@@ -139,8 +140,9 @@ const Cart = () => {
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
-  const shipping = subtotal > 50 ? 0 : 9.99;
-  const total = subtotal + shipping;
+  const isVip = isVipEmail(user?.email);
+  const shipping = isVip ? 0 : subtotal > 50 ? 0 : 9.99;
+  const total = isVip ? 0 : subtotal + shipping;
 
   if (loading) {
     return (
@@ -314,7 +316,7 @@ const Cart = () => {
                         )}
                       </span>
                     </div>
-                    {subtotal <= 50 && (
+                    {!isVip && subtotal <= 50 && (
                       <p className="text-xs text-muted-foreground">
                         Add {mode === "ngn" ? formatNGN(50 - subtotal) : formatUSD(50 - subtotal)} more for free shipping
                       </p>
@@ -326,6 +328,11 @@ const Cart = () => {
                   <div className="flex justify-between items-start text-lg font-bold">
                     <span>Total</span>
                     <span className="text-primary text-right">
+                      {isVip && (
+                        <span className="block text-xs font-medium text-green-600 dark:text-green-400 mb-1">
+                          VIP — 100% off
+                        </span>
+                      )}
                       {mode !== "ngn" && <>{formatUSD(total)}</>}
                       {mode === "both" && (
                         <span className="block text-sm font-semibold text-foreground/70">{formatNGN(total)}</span>
