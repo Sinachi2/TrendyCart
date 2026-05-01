@@ -1161,10 +1161,10 @@ const Checkout = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
                         <span>
-                          {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                          {shipping === 0 ? (isVip ? "FREE (VIP)" : "FREE") : `$${shipping.toFixed(2)}`}
                         </span>
                       </div>
-                      {selectedSubtotal <= 50 && selectedSubtotal > 0 && (
+                      {!isVip && selectedSubtotal <= 50 && selectedSubtotal > 0 && (
                         <p className="text-xs text-muted-foreground">
                           Add ${(50 - selectedSubtotal).toFixed(2)} more for free shipping
                         </p>
@@ -1187,7 +1187,12 @@ const Checkout = () => {
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
                       <div className="text-right">
-                        {discount > 0 && (
+                        {isVip && (
+                          <div className="text-sm font-normal text-green-600 dark:text-green-400">
+                            VIP — 100% off
+                          </div>
+                        )}
+                        {!isVip && discount > 0 && (
                           <div className="text-sm font-normal text-green-600 dark:text-green-400">
                             -${discount.toFixed(2)} discount
                           </div>
