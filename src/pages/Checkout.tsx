@@ -33,6 +33,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { isVipEmail } from "@/lib/vip";
 
 const PAYMENT_DETAILS = {
   bank: {
@@ -264,8 +265,9 @@ const Checkout = () => {
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
-  const shipping = selectedSubtotal > 50 ? 0 : 9.99;
-  const total = selectedSubtotal + shipping - discount;
+  const isVip = isVipEmail(user?.email);
+  const shipping = isVip ? 0 : selectedSubtotal > 50 ? 0 : 9.99;
+  const total = isVip ? 0 : Math.max(0, selectedSubtotal + shipping - discount);
 
   const handleCouponApplied = (coupon: Coupon | null, discountAmount: number) => {
     setAppliedCoupon(coupon);
@@ -1159,10 +1161,10 @@ const Checkout = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Shipping</span>
                         <span>
-                          {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                          {shipping === 0 ? (isVip ? "FREE (VIP)" : "FREE") : `$${shipping.toFixed(2)}`}
                         </span>
                       </div>
-                      {selectedSubtotal <= 50 && selectedSubtotal > 0 && (
+                      {!isVip && selectedSubtotal <= 50 && selectedSubtotal > 0 && (
                         <p className="text-xs text-muted-foreground">
                           Add ${(50 - selectedSubtotal).toFixed(2)} more for free shipping
                         </p>
@@ -1185,7 +1187,12 @@ const Checkout = () => {
                     <div className="flex justify-between text-lg font-bold">
                       <span>Total</span>
                       <div className="text-right">
-                        {discount > 0 && (
+                        {isVip && (
+                          <div className="text-sm font-normal text-green-600 dark:text-green-400">
+                            VIP — 100% off
+                          </div>
+                        )}
+                        {!isVip && discount > 0 && (
                           <div className="text-sm font-normal text-green-600 dark:text-green-400">
                             -${discount.toFixed(2)} discount
                           </div>
