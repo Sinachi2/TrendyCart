@@ -10,6 +10,16 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+function escapeHtml(unsafe: unknown): string {
+  if (unsafe === null || unsafe === undefined) return "";
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 interface NotificationRequest {
   type: "order_status" | "price_drop" | "low_stock" | "payment_verified" | "payment_submitted";
   email?: string;
@@ -97,8 +107,8 @@ const handler = async (req: Request): Promise<Response> => {
         .map(
           (p) => `
           <tr style="border-bottom: 1px solid #eee;">
-            <td style="padding: 12px;">${p.name}</td>
-            <td style="padding: 12px;">${p.category}</td>
+            <td style="padding: 12px;">${escapeHtml(p.name)}</td>
+            <td style="padding: 12px;">${escapeHtml(p.category)}</td>
             <td style="padding: 12px; text-align: center; color: ${p.stock_quantity === 0 ? '#ef4444' : p.stock_quantity <= 3 ? '#f97316' : '#eab308'}; font-weight: bold;">
               ${p.stock_quantity}
             </td>
@@ -182,7 +192,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="margin: 10px 0 0 0; font-size: 24px; font-weight: bold; color: white;">Payment Verified!</p>
           </div>
           
-          <p style="color: #333;">Hello${data?.customerName ? ` ${data.customerName}` : ''},</p>
+          <p style="color: #333;">Hello${data?.customerName ? ` ${escapeHtml(data.customerName)}` : ''},</p>
           <p style="color: #333;">Great news! Your payment for order <strong>#${data?.orderId?.slice(0, 8).toUpperCase()}</strong> has been verified.</p>
           <p style="color: #333;">We're now processing your order and will notify you when it ships.</p>
           
@@ -203,11 +213,11 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #666; margin: 5px 0;">Payment Confirmation</p>
           </div>
           
-          <p style="color: #333;">Hello${data?.customerName ? ` ${data.customerName}` : ''},</p>
+          <p style="color: #333;">Hello${data?.customerName ? ` ${escapeHtml(data.customerName)}` : ''},</p>
           <p style="color: #333;">We've received your payment proof for order <strong>#${data?.orderId?.slice(0, 8).toUpperCase()}</strong>.</p>
           
           <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0; color: #333;"><strong>Payment Method:</strong> ${data?.paymentMethod || 'N/A'}</p>
+            <p style="margin: 0; color: #333;"><strong>Payment Method:</strong> ${escapeHtml(data?.paymentMethod || 'N/A')}</p>
             <p style="margin: 10px 0 0 0; color: #333;"><strong>Amount:</strong> $${data?.amount?.toFixed(2) || 'N/A'}</p>
           </div>
           
@@ -239,13 +249,13 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="color: #666; margin: 5px 0;">Your Order Status Update</p>
           </div>
           
-          <p style="color: #333;">Hello${data?.customerName ? ` ${data.customerName}` : ''},</p>
+          <p style="color: #333;">Hello${data?.customerName ? ` ${escapeHtml(data.customerName)}` : ''},</p>
           <p style="color: #333;">Your order <strong>#${data?.orderId?.slice(0, 8).toUpperCase()}</strong> has been updated.</p>
           
           <div style="background: linear-gradient(135deg, #ec4899 0%, #f97316 100%); padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center;">
             <p style="margin: 0; font-size: 14px; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 1px;">Current Status</p>
             <p style="margin: 10px 0 0 0; font-size: 28px; font-weight: bold; color: white;">
-              ${statusEmoji} ${data?.orderStatus?.toUpperCase()}
+              ${statusEmoji} ${escapeHtml(data?.orderStatus?.toUpperCase())}
             </p>
           </div>
           
@@ -259,13 +269,13 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     } else if (type === "price_drop" && email) {
       const savings = ((data?.oldPrice || 0) - (data?.newPrice || 0)).toFixed(2);
-      subject = `🎉 Price Drop Alert - ${data?.productName} is now on sale!`;
+      subject = `🎉 Price Drop Alert - ${data?.productName ?? ''} is now on sale!`;
       html = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #333; text-align: center;">🎉 Great news!</h1>
           <p style="color: #333; text-align: center;">An item on your wishlist just got cheaper!</p>
           <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin: 25px 0; text-align: center;">
-            <h2 style="margin: 0 0 15px 0; color: #333;">${data?.productName}</h2>
+            <h2 style="margin: 0 0 15px 0; color: #333;">${escapeHtml(data?.productName)}</h2>
             <p style="margin: 0;">
               <span style="text-decoration: line-through; color: #999;">$${data?.oldPrice}</span>
               <span style="color: #e53935; font-size: 32px; font-weight: bold; margin-left: 15px;">$${data?.newPrice}</span>
